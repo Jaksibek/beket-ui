@@ -1,21 +1,8 @@
 import { StepEnum } from "@/shared/constants";
 import { useAppContext } from "@/shared/lib/hooks/useAppContext";
 import { Card, Flex, Steps } from "antd";
-
-const items = [
-  {
-    title: "Выбор станции",
-  },
-  {
-    title: "Выбор автобуса",
-  },
-  {
-    title: "Бронирование места",
-  },
-  {
-    title: "Оплата",
-  },
-];
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 interface IProps {
   inHeader?: boolean;
@@ -24,6 +11,26 @@ interface IProps {
 function StepsTicket({ inHeader }: IProps) {
   const { searchParams } = useAppContext();
   const current = Number(searchParams.get(StepEnum.STEP));
+
+  const { t } = useTranslation();
+
+  const items = useMemo(
+    () => [
+      {
+        title: t("Select stations"),
+      },
+      {
+        title: t("Select bus"),
+      },
+      {
+        title: t("Booking"),
+      },
+      {
+        title: t("Payment"),
+      },
+    ],
+    [t]
+  );
 
   if (inHeader) {
     return <Steps current={current} items={items} />;

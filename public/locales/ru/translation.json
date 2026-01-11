@@ -5,6 +5,11 @@
   "Select date": "Выберите дату",
   "Find a ticket": "Найти билет",
 
+  "Select stations": "Выбор станций",
+  "Select bus": "Выбора автобуса",
+  "Booking": "Бронирование",
+  "Payment": "Оплата",
+
   "km": "км",
   "hours": "ч",
   "minutes": "мин",

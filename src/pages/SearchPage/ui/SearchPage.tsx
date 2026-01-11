@@ -111,6 +111,7 @@ function SearchPage() {
             </Flex>
           </Col>
         )}
+
         <Col span={sm ? 17 : 24}>
           <TripItems data={data.data} sort={sort} filter={filter} />
         </Col>
