@@ -16,6 +16,11 @@ interface IBus {
   seatType: string;
   seatSchemeName: string;
   seatTypeCode: SeatTypeCodeEnum;
+
+  hasAC: boolean;
+  hasCharger: boolean;
+  hasWifi: boolean;
+  hasTv: boolean;
 }
 
 export interface ITrip {

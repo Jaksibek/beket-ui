@@ -28,5 +28,10 @@
   "Filter": "Фильтровать",
   "Sedentary": "Сидячий",
   "Sleeper": "Спальное",
-  "All": "Все"
+  "All": "Все",
+
+  "Air Conditioning": "Кондиционер",
+  "Charging Ports": "Зарядные порты",
+  "Wi-Fi": "Wi-Fi",
+  "On-board TV": "Бортовой телевизор"
 }

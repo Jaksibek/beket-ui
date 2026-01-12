@@ -1,8 +1,4 @@
-import { queryKeys } from "@/shared/constants/queryKeys";
 import { useStepParams } from "@/shared/lib/hooks/useStepParams";
-import { useQuery } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
-import { getTripSearch } from "../model/services";
 import { EmptyData } from "@/shared/ui/EmptyData";
 import { ErrorContent } from "@/shared/ui/ErrorContent";
 import { TripItems } from "@/entities/TripItems";
@@ -17,6 +13,7 @@ import SortAndDrawer from "./SortAndDrawer/SortAndDrawer";
 import { FilterTrip } from "@/entities/FilterTrip";
 import type { SeatTypeCodeEnum } from "../model/types";
 import FilterAndDrawer from "./FilterAndDrawer/FilterAndDrawer";
+import { useGetTrips } from "../model/hooks/useGetTrips";
 
 const GAP_DESKTOP = 15;
 const GAP_MOBILE = 5;
@@ -27,8 +24,12 @@ function SearchPage() {
   const [openDrawer, setOpenDrawer] = useState(false);
   const [filterDrawer, setFilterDrawer] = useState(false);
 
+  const [hasAC, setHasAC] = useState<boolean>(false);
+  const [hasCharger, setHasCharger] = useState<boolean>(false);
+  const [hasWifi, setHasWifi] = useState<boolean>(false);
+  const [hasTv, setHasTv] = useState<boolean>(false);
+
   const { from, to, date } = useStepParams();
-  const { i18n } = useTranslation();
   const { sm } = useResponsive();
 
   const showDrawer = useCallback(() => {
@@ -47,15 +48,7 @@ function SearchPage() {
     setFilterDrawer(false);
   }, []);
 
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: [queryKeys.tripSearch, i18n.language, from, to, date],
-    queryFn: () => {
-      if (from && to && date) {
-        return getTripSearch(from, to, date);
-      }
-    },
-    enabled: !!from && !!to && !!date,
-  });
+  const { data, isLoading, isError, error } = useGetTrips({ from, to, date });
 
   if (isLoading) {
     return <LoadingPage />;
@@ -84,7 +77,14 @@ function SearchPage() {
         {sm && (
           <Col span={7}>
             <Flex vertical gap={10}>
-              <FilterTrip filter={filter} setFilter={setFilter} />
+              <FilterTrip
+                filter={filter}
+                setFilter={setFilter}
+                setHasAC={setHasAC}
+                setHasCharger={setHasCharger}
+                setHasWifi={setHasWifi}
+                setHasTv={setHasTv}
+              />
               <SortTrip sort={sort} setSort={setSort} />
             </Flex>
           </Col>
@@ -100,6 +100,11 @@ function SearchPage() {
                 showDrawer={showFilterDrawer}
                 openDrawer={filterDrawer}
                 onCloseDrawer={onCloseFilterDrawer}
+               
+                setHasAC={setHasAC}
+                setHasCharger={setHasCharger}
+                setHasWifi={setHasWifi}
+                setHasTv={setHasTv}
               />
               <SortAndDrawer
                 showDrawer={showDrawer}
@@ -113,7 +118,15 @@ function SearchPage() {
         )}
 
         <Col span={sm ? 17 : 24}>
-          <TripItems data={data.data} sort={sort} filter={filter} />
+          <TripItems
+            data={data.data}
+            sort={sort}
+            filter={filter}
+            hasAC={hasAC}
+            hasCharger={hasCharger}
+            hasWifi={hasWifi}
+            hasTv={hasTv}
+          />
         </Col>
       </Row>
     </SearchPageLayout>

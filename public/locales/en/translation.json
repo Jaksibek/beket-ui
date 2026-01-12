@@ -29,5 +29,10 @@
   "Filter": "Filter",
   "Sedentary": "Sedentary",
   "Sleeper": "Sleeper",
-  "All": "All"
+  "All": "All",
+
+  "Air Conditioning": "Air Conditioning",
+  "Charging Ports": "Charging Ports",
+  "Wi-Fi": "Wi-Fi",
+  "On-board TV": "On-board TV"
 }

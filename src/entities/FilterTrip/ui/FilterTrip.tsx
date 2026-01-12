@@ -1,17 +1,34 @@
-import { Card, Radio, type RadioChangeEvent } from "antd";
+import { Card, Divider, Radio, type RadioChangeEvent } from "antd";
 import type { SeatTypeCodeEnum } from "@/pages/SearchPage";
 import { useCallback, type Dispatch, type SetStateAction } from "react";
 import { SortOrFilterTop } from "@/shared/ui/SortOrFilterTop";
 import { useGetOptions } from "../model/hooks/useGetOptions";
+import FilterCheckBox from "./FilterCheckBox/FilterCheckBox";
 
 interface IProps {
   filter: "" | SeatTypeCodeEnum;
   setFilter: Dispatch<SetStateAction<"" | SeatTypeCodeEnum>>;
   isMobile?: boolean;
   onCloseDrawer?: () => void;
+
+  setHasAC: Dispatch<SetStateAction<boolean>>;
+  setHasCharger: Dispatch<SetStateAction<boolean>>;
+  setHasWifi: Dispatch<SetStateAction<boolean>>;
+  setHasTv: Dispatch<SetStateAction<boolean>>;
 }
 
-function FilterTrip({ filter, setFilter, isMobile, onCloseDrawer }: IProps) {
+function FilterTrip(props: IProps) {
+  const {
+    filter,
+    setFilter,
+    isMobile,
+    onCloseDrawer,
+    setHasAC,
+    setHasCharger,
+    setHasWifi,
+    setHasTv,
+  } = props;
+
   const options = useGetOptions(isMobile);
 
   const onChange = ({ target: { value } }: RadioChangeEvent) => {
@@ -28,12 +45,21 @@ function FilterTrip({ filter, setFilter, isMobile, onCloseDrawer }: IProps) {
 
   if (isMobile) {
     return (
-      <Radio.Group
-        value={filter}
-        options={options}
-        onChange={onChange}
-        vertical
-      />
+      <>
+        <Radio.Group
+          value={filter}
+          options={options}
+          onChange={onChange}
+          vertical
+        />
+        <Divider />
+        <FilterCheckBox
+          setHasAC={setHasAC}
+          setHasCharger={setHasCharger}
+          setHasWifi={setHasWifi}
+          setHasTv={setHasTv}
+        />
+      </>
     );
   }
 
@@ -45,6 +71,13 @@ function FilterTrip({ filter, setFilter, isMobile, onCloseDrawer }: IProps) {
         options={options}
         onChange={onChange}
         vertical
+      />
+      <Divider />
+      <FilterCheckBox
+        setHasAC={setHasAC}
+        setHasCharger={setHasCharger}
+        setHasWifi={setHasWifi}
+        setHasTv={setHasTv}
       />
     </Card>
   );

@@ -9,9 +9,16 @@ interface IProps {
   data: ITrip[];
   sort: "" | SortTripEnum;
   filter: "" | SeatTypeCodeEnum;
+
+  hasAC: boolean;
+  hasCharger: boolean;
+  hasWifi: boolean;
+  hasTv: boolean;
 }
 
-function TripItems({ data, sort, filter }: IProps) {
+function TripItems(props: IProps) {
+  const { data, sort, filter, hasAC, hasCharger, hasWifi, hasTv } = props;
+
   const sortedData = useMemo(() => {
     if (sort === SortTripEnum.PRICE) {
       return [...data].sort((a, b) => a.price - b.price);
@@ -37,12 +44,34 @@ function TripItems({ data, sort, filter }: IProps) {
     return sortedData.filter((el) => el.bus.seatTypeCode.includes(filter));
   }, [filter, sortedData]);
 
-  if (!filterAndSorterData.length) return <EmptyData />;
+  const filterComfortData = useMemo(() => {
+    return filterAndSorterData.filter((el) => {
+      if (hasAC && !el.bus.hasAC) {
+        return false;
+      }
+
+      if (hasCharger && !el.bus.hasCharger) {
+        return false;
+      }
+
+      if (hasWifi && !el.bus.hasWifi) {
+        return false;
+      }
+
+      if (hasTv && !el.bus.hasTv) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [filterAndSorterData, hasAC, hasCharger, hasWifi, hasTv]);
+
+  if (!filterComfortData.length) return <EmptyData />;
 
   return (
     <div>
       <Row gutter={[10, 10]}>
-        {filterAndSorterData.map((el) => (
+        {filterComfortData.map((el) => (
           <TripItem data={el} key={el.tripId} />
         ))}
       </Row>

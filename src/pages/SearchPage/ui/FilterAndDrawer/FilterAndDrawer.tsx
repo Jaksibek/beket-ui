@@ -11,6 +11,11 @@ interface IProps {
   openDrawer: boolean;
   filter: "" | SeatTypeCodeEnum;
   setFilter: Dispatch<SetStateAction<"" | SeatTypeCodeEnum>>;
+
+  setHasAC: Dispatch<SetStateAction<boolean>>;
+  setHasCharger: Dispatch<SetStateAction<boolean>>;
+  setHasWifi: Dispatch<SetStateAction<boolean>>;
+  setHasTv: Dispatch<SetStateAction<boolean>>;
 }
 
 function FilterAndDrawer({
@@ -19,6 +24,11 @@ function FilterAndDrawer({
   openDrawer,
   filter,
   setFilter,
+
+  setHasAC,
+  setHasCharger,
+  setHasWifi,
+  setHasTv,
 }: IProps) {
   const { t } = useTranslation();
 
@@ -34,6 +44,10 @@ function FilterAndDrawer({
           setFilter={setFilter}
           isMobile
           onCloseDrawer={onCloseDrawer}
+          setHasAC={setHasAC}
+          setHasCharger={setHasCharger}
+          setHasWifi={setHasWifi}
+          setHasTv={setHasTv}
         />
       </Drawer>
     </>
