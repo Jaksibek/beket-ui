@@ -1,18 +1,8 @@
-import {
-  Button,
-  Card,
-  Flex,
-  Radio,
-  Typography,
-  type RadioChangeEvent,
-} from "antd";
-import styles from "./FilterTrip.module.scss";
-import { CloseOutlined } from "@ant-design/icons";
+import { Card, Radio, type RadioChangeEvent } from "antd";
 import type { SeatTypeCodeEnum } from "@/pages/SearchPage";
-import { useMemo, type Dispatch, type SetStateAction } from "react";
-import { useTranslation } from "react-i18next";
-
-const { Title } = Typography;
+import { useCallback, type Dispatch, type SetStateAction } from "react";
+import { SortOrFilterTop } from "@/shared/ui/SortOrFilterTop";
+import { useGetOptions } from "../model/hooks/useGetOptions";
 
 interface IProps {
   filter: "" | SeatTypeCodeEnum;
@@ -22,15 +12,7 @@ interface IProps {
 }
 
 function FilterTrip({ filter, setFilter, isMobile, onCloseDrawer }: IProps) {
-  const { t } = useTranslation();
-
-  const options = useMemo(
-    () => [
-      { value: "1", label: t("Sedentary") },
-      { value: "2", label: t("Sleeper") },
-    ],
-    [t]
-  );
+  const options = useGetOptions(isMobile);
 
   const onChange = ({ target: { value } }: RadioChangeEvent) => {
     setFilter(value);
@@ -40,11 +22,15 @@ function FilterTrip({ filter, setFilter, isMobile, onCloseDrawer }: IProps) {
     }
   };
 
+  const onClear = useCallback(() => {
+    setFilter("");
+  }, [setFilter]);
+
   if (isMobile) {
     return (
       <Radio.Group
         value={filter}
-        options={[...options, { value: "", label: t("All") }]}
+        options={options}
         onChange={onChange}
         vertical
       />
@@ -53,16 +39,7 @@ function FilterTrip({ filter, setFilter, isMobile, onCloseDrawer }: IProps) {
 
   return (
     <Card>
-      <Flex align="center" justify="space-between" className={styles.flex}>
-        <Title style={{ marginBottom: 0 }} level={5}>
-          {t("Filter")}
-        </Title>
-        <Button
-          icon={<CloseOutlined />}
-          type="text"
-          onClick={() => setFilter("")}
-        />
-      </Flex>
+      <SortOrFilterTop title="Filter" clear={onClear} />
       <Radio.Group
         value={filter}
         options={options}

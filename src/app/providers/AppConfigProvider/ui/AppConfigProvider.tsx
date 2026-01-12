@@ -14,7 +14,7 @@ function AppConfigProvider({ children }: IProps) {
       theme={{
         token: {
           fontFamily: "var(--font-roboto)",
-          fontSize: sm ? 16 : 15,
+          fontSize: sm ? 16 : 14,
           borderRadius: 7,
         },
         components: {
