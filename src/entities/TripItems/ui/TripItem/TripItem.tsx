@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { MinusOutlined } from "@ant-design/icons";
 import { Card, Col, Flex, Typography } from "antd";
 import type { ITrip } from "@/pages/SearchPage";
@@ -6,6 +7,7 @@ import TripItemInfo from "./TripInfo/TripItemInfo";
 import TripItemAllTime from "./TrimItemAllTime/TripItemAllTime";
 import styles from "./TripItem.module.scss";
 import TripItemBottom from "./TripItemBottom/TripItemBottom";
+import { SeatSelectionModal } from "@/widgets/SeatSelectionModal";
 
 const { Title, Paragraph } = Typography;
 
@@ -15,6 +17,7 @@ interface IProps {
 
 function TripItem({ data }: IProps) {
   const { sm } = useResponsive();
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { bus, route, price } = data;
   const { brand, model, seatType, seatsCount } = bus;
@@ -64,8 +67,14 @@ function TripItem({ data }: IProps) {
           price={price}
           seatsCount={seatsCount}
           seatType={seatType}
+          onSelectSeats={() => setIsModalOpen(true)}
         />
       </Card>
+      <SeatSelectionModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        trip={data}
+      />
     </Col>
   );
 }

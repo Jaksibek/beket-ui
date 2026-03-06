@@ -1,0 +1,65 @@
+.seat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease-in-out;
+  box-sizing: border-box;
+
+  .seatNumber {
+    font-weight: 500;
+    font-size: 14px;
+  }
+
+  &.available {
+    background-color: transparent;
+    border: 1px solid #20A254; // Freedom Travel Green for some seats
+
+    .seatNumber {
+      color: #20A254;
+    }
+
+    &:hover {
+      background-color: rgba(32, 162, 84, 0.05);
+    }
+
+    &.aisle {
+      border-color: #3b82f6; // Blue border to distinguish
+
+      .seatNumber {
+        color: #3b82f6;
+      }
+
+      &:hover {
+        background-color: rgba(59, 130, 246, 0.05);
+      }
+    }
+  }
+
+  &.booked {
+    background-color: #f1f5f9;
+    border: 1px solid transparent; // No visible border to blend in
+    cursor: not-allowed;
+
+    .seatNumber {
+      color: #cbd5e1; // Light gray text
+    }
+  }
+
+  &.selected {
+    background-color: #3a22c5; // Freedom Travel dark blue/purple brand color
+    border: 1px solid #3a22c5;
+
+    .seatNumber {
+      color: #ffffff;
+    }
+
+    &:hover {
+      background-color: #2d1a99;
+    }
+  }
+}

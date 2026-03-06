@@ -1,0 +1,112 @@
+.modal {
+    :global {
+        .ant-modal-content {
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .ant-modal-header {
+            margin-bottom: 24px;
+        }
+    }
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.busLayoutWrapper {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 12px;
+
+    /* Custom thin scrollbar */
+    &::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+
+        &:hover {
+            background: #94a3b8;
+        }
+    }
+}
+
+
+
+.bottomSection {
+    background-color: #f8fafc;
+    border-radius: 12px;
+    padding: 16px 24px;
+}
+
+.legendWrapper {
+    margin-bottom: 16px;
+
+    .legendTitle {
+        display: block;
+        margin-bottom: 12px;
+        font-size: 16px;
+    }
+}
+
+.legend {
+    .legendItem {
+        .legendBox {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        &.available .legendBox {
+            border: 2px solid #20A254; // Green border for available
+        }
+
+        &.booked .legendBox {
+            background-color: #f1f5f9;
+            border: 2px solid #e2e8f0; // Filled light gray for booked
+        }
+
+        &.selected .legendBox {
+            background-color: #3a22c5; // Solid brand color for selected
+            border: 2px solid #3a22c5;
+        }
+    }
+}
+
+.summary {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 32px;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 16px;
+
+    .summaryText {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .bookButton {
+        background-color: #3a22c5;
+        border-radius: 8px;
+        padding: 0 32px;
+        height: 48px;
+        font-size: 16px;
+
+        &:hover {
+            background-color: #2d1a99 !important;
+        }
+    }
+}

@@ -6,11 +6,12 @@ import { useTranslation } from "react-i18next";
 
 interface IProps {
   inHeader?: boolean;
+  currentStep?: number;
 }
 
-function StepsTicket({ inHeader }: IProps) {
+function StepsTicket({ inHeader, currentStep }: IProps) {
   const { searchParams } = useAppContext();
-  const current = Number(searchParams.get(StepEnum.STEP));
+  const current = currentStep !== undefined ? currentStep : Number(searchParams.get(StepEnum.STEP));
 
   const { t } = useTranslation();
 

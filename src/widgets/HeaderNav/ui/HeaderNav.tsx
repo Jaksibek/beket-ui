@@ -14,15 +14,29 @@ function HeaderNav() {
   const { pathname } = useLocation();
   const { sm } = useResponsive();
 
+  let currentStep = undefined;
+  if (pathname === appRoutes.booking) {
+    currentStep = 2;
+  }
+
   return (
     <Header className={styles.header}>
       <Container>
-        <Flex flex={1} align="center" justify="space-between" gap={16}>
-          <Flex>
+        <Flex flex={1} align="center" justify="space-between" gap={16} wrap="nowrap">
+          {/* LEFT: Logo - ensuring it doesn't shrink */}
+          <Flex flex="0 0 auto">
             <Logo />
           </Flex>
-          {pathname !== appRoutes.home && sm && <StepsTicket inHeader />}
-          <Flex align="center" gap={16}>
+
+          {/* CENTER: StepsTicket - taking remaining space but allowing scroll/shrink if needed */}
+          {pathname !== appRoutes.home && sm && (
+            <Flex flex="1 1 auto" justify="center" style={{ minWidth: 0, paddingInline: '20px' }}>
+              <StepsTicket inHeader currentStep={currentStep} />
+            </Flex>
+          )}
+
+          {/* RIGHT: SwitchLang etc. - ensuring it doesn't shrink */}
+          <Flex flex="0 0 auto" align="center" gap={16}>
             <SwitchLang />
           </Flex>
         </Flex>

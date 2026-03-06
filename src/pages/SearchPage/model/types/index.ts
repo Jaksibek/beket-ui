@@ -31,3 +31,24 @@ export interface ITrip {
 }
 
 export type SeatTypeCodeEnum = "1" | "2";
+
+export interface ISeat {
+  id: string;
+  number: string | null;
+  row: number;
+  column: number;
+  status: 'Free' | 'Reserved' | 'Booked';
+  price: number;
+  isWindow: boolean;
+  cellTypeCode: 'seat' | 'aisle' | 'door' | 'wc' | 'driver' | 'empty';
+  type: string;
+}
+
+export interface ITripSeatsResponse {
+  tripId: string;
+  totalSeats: number;
+  freeSeats: number;
+  reservedSeats: number;
+  bookedSeats: number;
+  seats: ISeat[];
+}

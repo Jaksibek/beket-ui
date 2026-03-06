@@ -5,7 +5,7 @@ import { appRoutes } from "@/shared/config/router";
 function Logo() {
   return (
     <Link to={appRoutes.home} className={styles.logoLink}>
-      bus kz
+      BEKET
     </Link>
   );
 }

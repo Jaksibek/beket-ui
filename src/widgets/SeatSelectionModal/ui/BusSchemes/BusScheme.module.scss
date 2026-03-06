@@ -1,0 +1,68 @@
+.schemeContainer {
+    display: flex;
+    flex-direction: row; // Horizontal bus orientation
+    align-items: center;
+    border: 3px solid #94a3b8; // Bus outer shell
+    border-radius: 20px 80px 80px 20px; // Bus shape: left is flat (back), right is curved (front)
+    padding: 16px 20px 16px 12px;
+    background-color: #f8fafc;
+    min-width: max-content;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.03);
+}
+
+.driverCell {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .wheel {
+        width: 30px;
+        height: 30px;
+        border: 3px solid #64748b;
+        border-radius: 50%;
+        position: relative;
+
+        &::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background-color: #64748b;
+            transform: translateY(-50%);
+        }
+    }
+}
+
+.seatsGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px; // Reduced vertical gap to fit nicely
+}
+
+.seatRow {
+    display: flex;
+    flex-direction: row;
+    gap: 20px; // Increased horizontal gap 
+}
+
+.emptySpace {
+    width: 36px; // Slightly smaller to prevent scroll
+    height: 36px;
+}
+
+.facility {
+    width: 36px; // Scaled to match new size
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f1f5f9;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #64748b;
+    border: 1px dashed #cbd5e1;
+}

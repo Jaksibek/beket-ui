@@ -1,10 +1,11 @@
 .logoLink {
-  color: var(--color-logo);
-  font-size: 32px;
-  font-weight: 600;
-  text-transform: uppercase;
+  color: var(--color-brand);
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  text-decoration: none;
 
   @media screen and (max-width: 768px) {
-    font-size: 27px;
+    font-size: 24px;
   }
 }
