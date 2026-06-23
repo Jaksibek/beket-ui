@@ -16,5 +16,22 @@ API.interceptors.request.use(
     return Promise.reject(error);
   }
 );
-
 export default API;
+
+export const authApi = axios.create({
+  baseURL,
+});
+
+authApi.interceptors.request.use(
+  function (config) {
+    config.headers["Accept-Language"] = i18n.language;
+    const token = localStorage.getItem("carrier_token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  function (error) {
+    return Promise.reject(error);
+  }
+);

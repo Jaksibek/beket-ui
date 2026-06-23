@@ -1,13 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Button,
-  Card,
-  Col,
   DatePicker,
-  Row,
   type DatePickerProps,
   notification,
 } from "antd";
+import {
+  SwapOutlined,
+} from "@ant-design/icons";
 import styles from "./SearchingTicket.module.scss";
 import { useTranslation } from "react-i18next";
 import { useAppContext } from "@/shared/lib/hooks/useAppContext";
@@ -65,6 +64,13 @@ function SearchingTicket() {
     setToVal(value);
   }, []);
 
+  // Cities swapper callback
+  const handleSwapCities = useCallback(() => {
+    const temp = fromVal;
+    setFromVal(toVal);
+    setToVal(temp);
+  }, [fromVal, toVal]);
+
   const onChangeDate: DatePickerProps["onChange"] = useCallback(
     (value: dayjs.Dayjs | null) => {
       if (value) {
@@ -88,14 +94,14 @@ function SearchingTicket() {
   const onClickSearch = useCallback(() => {
     if (!fromVal || !toVal || !dateVal) {
       api.warning({
-        title: "Заполните все поля",
+        title: t("Заполните все поля") || "Заполните все поля",
       });
       return;
     }
 
     if (fromVal === toVal) {
       api.warning({
-        title: "Станции отправления и прибытия не могут быть одинаковыми",
+        title: t("Станции отправления и прибытия не могут быть одинаковыми") || "Станции отправления и прибытия не могут быть одинаковыми",
       });
       return;
     }
@@ -113,7 +119,7 @@ function SearchingTicket() {
       pathname: appRoutes.search,
       search: params.toString(),
     });
-  }, [api, fromVal, navigate, searchParams, toVal, dateVal]);
+  }, [api, fromVal, navigate, searchParams, toVal, dateVal, t]);
 
   useEffect(() => {
     dayjs.locale(i18n.language === "kz" ? "kk" : i18n.language);
@@ -135,51 +141,65 @@ function SearchingTicket() {
   return (
     <>
       {contextHolder}
-      <Card className={styles.cardWrapper}>
-        <Row gutter={[10, 10]} className={styles.rowWrapper}>
-          <Col sm={6} xs={24}>
+      <div className={styles.unifiedSearchContainer}>
+        <div className={styles.searchBar}>
+          {/* FROM block with floating swapper */}
+          <div className={`${styles.fieldBlock} ${styles.fromBlock}`}>
             <TicketSelect
-              placeholder="From"
+              placeholder="Откуда"
               fromVal={fromVal}
               onChange={onChangeFrom}
               changeCityEnabled={changeCityEnabled}
               isLoading={isLoading}
               data={data?.data}
             />
-          </Col>
-          <Col sm={6} xs={24}>
+            {/* Swap Button sitting centered on the divider */}
+            <button type="button" className={styles.swapButton} onClick={handleSwapCities}>
+              <SwapOutlined className={styles.swapIcon} />
+            </button>
+          </div>
+
+          <div className={styles.divider}></div>
+
+          {/* TO block */}
+          <div className={`${styles.fieldBlock} ${styles.toBlock}`}>
             <TicketSelect
-              placeholder="To"
+              placeholder="Куда"
               fromVal={toVal}
               onChange={onChangeTo}
               changeCityEnabled={changeCityEnabled}
               isLoading={isLoading}
               data={data?.data}
             />
-          </Col>
-          <Col sm={6} xs={24}>
+          </div>
+
+          <div className={styles.divider}></div>
+
+          {/* DATE block */}
+          <div className={`${styles.fieldBlock} ${styles.dateBlock}`}>
             <DatePicker
-              placeholder={t("Select date")}
-              format="DD MMM, ddd"
+              placeholder={t("Когда")}
+              format="DD MMMM, ddd"
               value={displayDate}
               onChange={onChangeDate}
-              className={styles.blockItem}
+              className={styles.datePickerInput}
               disabledDate={disabledDate}
               locale={getAntdLocale}
+              inputReadOnly
             />
-          </Col>
-          <Col sm={6} xs={24}>
-            <Button
-              type="primary"
-              className={styles.blockItem}
-              onClick={onClickSearch}
-              disabled={!fromVal || !toVal || !dateVal}
-            >
-              {t("Find a ticket")}
-            </Button>
-          </Col>
-        </Row>
-      </Card>
+          </div>
+
+          {/* Integrated Search Button */}
+          <button
+            type="button"
+            className={styles.searchButton}
+            onClick={onClickSearch}
+            disabled={!fromVal || !toVal || !dateVal}
+          >
+            {t("Найти")}
+          </button>
+        </div>
+      </div>
     </>
   );
 }

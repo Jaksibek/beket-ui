@@ -51,15 +51,15 @@
   }
 
   &.selected {
-    background-color: #3a22c5; // Freedom Travel dark blue/purple brand color
-    border: 1px solid #3a22c5;
+    background-color: var(--color-primary); // Sky-blue brand color
+    border: 1px solid var(--color-primary);
 
     .seatNumber {
       color: #ffffff;
     }
 
     &:hover {
-      background-color: #2d1a99;
+      background-color: var(--color-brand-hover);
     }
   }
 }

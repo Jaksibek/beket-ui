@@ -1,10 +1,16 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
 import { AppLayout } from "../../AppLayout";
 import { HomePageAsync } from "@/pages/HomePage";
 import { AboutPageAsync } from "@/pages/AboutPage";
 import { appRoutes } from "@/shared/config/router";
 import { SearchPageAsync } from "@/pages/SearchPage";
 import { BookingPageAsync } from "@/pages/BookingPage";
+import { CarrierLoginPage } from "@/pages/CarrierLoginPage";
+import { CarrierDashboardPage } from "@/pages/CarrierDashboardPage";
+import { CarrierFleetPage } from "@/pages/CarrierFleetPage";
+import { CarrierRoutesPage } from "@/pages/CarrierRoutesPage";
+import { CarrierTripsPage } from "@/pages/CarrierTripsPage";
+import { ProtectedRoute } from "@/shared/ui/ProtectedRoute";
 
 function AppRoutes() {
   return (
@@ -14,6 +20,18 @@ function AppRoutes() {
         <Route path={appRoutes.about} element={<AboutPageAsync />} />
         <Route path={appRoutes.search} element={<SearchPageAsync />} />
         <Route path={appRoutes.booking} element={<BookingPageAsync />} />
+
+        {/* Carrier Public */}
+        <Route path={appRoutes.carrierLogin} element={<CarrierLoginPage />} />
+
+        {/* Carrier Protected */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/carrier" element={<Navigate to={appRoutes.carrierDashboard} replace />} />
+          <Route path={appRoutes.carrierDashboard} element={<CarrierDashboardPage />} />
+          <Route path={appRoutes.carrierFleet} element={<CarrierFleetPage />} />
+          <Route path={appRoutes.carrierRoutes} element={<CarrierRoutesPage />} />
+          <Route path={appRoutes.carrierTrips} element={<CarrierTripsPage />} />
+        </Route>
       </Route>
     </Routes>
   );

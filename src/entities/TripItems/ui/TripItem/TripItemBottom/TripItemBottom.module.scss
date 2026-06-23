@@ -8,22 +8,25 @@
   .card {
     background-color: var(--color-gray-light);
     border: 1px solid var(--color-gray);
+    border-radius: 12px;
+    flex: 1;
 
     & > div {
-      padding: var(--space-xs-xs) !important;
+      padding: 12px var(--space-xs) !important;
 
       .desc {
-        margin-bottom: var(--space-xs-xs);
+        margin-bottom: 4px;
+        font-size: 13px;
 
         @media screen and (max-width: 768px) {
           font-size: var(--font-size-desc-xs);
-          margin-bottom: var(--space-xs-xs);
         }
       }
 
       .title {
         margin: 0;
-        font-weight: var(--font-weight-400) !important;
+        font-weight: 500 !important;
+        color: #475569 !important;
 
         @media screen and (max-width: 768px) {
           font-size: var(--font-size-desc-sm);
@@ -32,3 +35,31 @@
     }
   }
 }
+
+.urgencyText {
+  color: #ef4444 !important; // Red-500 urgency warning
+  display: inline-flex;
+  align-items: center;
+}
+
+.priceHighlight {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.actionBtn {
+  height: 48px !important;
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  padding: 0 24px !important;
+  flex: 0 0 auto;
+  max-width: 200px;
+  box-shadow: 0 4px 12px rgba(0, 145, 255, 0.25) !important;
+  transition: all 0.2s ease !important;
+
+  &:hover {
+    box-shadow: 0 6px 16px rgba(0, 145, 255, 0.35) !important;
+    transform: translateY(-1px);
+  }
+}
+

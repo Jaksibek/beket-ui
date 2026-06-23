@@ -168,7 +168,7 @@ export const SeatSelectionModal = memo((props: SeatSelectionModalProps) => {
                         </div>
                         <div className={styles.summaryText}>
                             <Text type="secondary">{t('К оплате', 'К оплате')}</Text>
-                            <Title level={4} style={{ margin: 0, color: '#3a22c5' }}>
+                            <Title level={4} style={{ margin: 0, color: 'var(--color-primary)' }}>
                                 {totalPrice} ₸
                             </Title>
                         </div>

@@ -1,0 +1,99 @@
+.wrapper {
+  margin-top: 50px;
+  margin-bottom: 50px;
+}
+
+.sectionHeader {
+  margin-bottom: 24px;
+  text-align: left;
+
+  @media screen and (max-width: 576px) {
+    text-align: center;
+  }
+}
+
+.sectionTitle {
+  margin: 0 0 6px 0 !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+}
+
+.sectionSubtitle {
+  font-size: 15px;
+  color: #64748b !important;
+  display: block;
+}
+
+.grid {
+  margin-top: 10px;
+}
+
+.card {
+  height: 100%;
+  border-radius: 16px !important;
+  background-color: var(--color-white) !important;
+  border: 1px solid rgba(0, 0, 0, 0.04) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02) !important;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+
+  :global {
+    .ant-card-body {
+      padding: 24px !important;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+  }
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 30px rgba(0, 145, 255, 0.08) !important;
+    border-color: rgba(0, 145, 255, 0.2) !important;
+
+    .iconContainer {
+      background-color: var(--color-primary);
+      box-shadow: 0 8px 20px rgba(0, 145, 255, 0.3);
+
+      svg {
+        stroke: #fff;
+        path {
+          stroke: #fff;
+        }
+      }
+    }
+  }
+}
+
+.iconContainer {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background-color: var(--color-brand-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+
+  svg {
+    width: 22px;
+    height: 22px;
+    transition: all 0.3s ease;
+  }
+}
+
+.cardTitle {
+  margin: 0 0 10px 0 !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+}
+
+.cardDescription {
+  font-size: 14px;
+  color: #64748b !important;
+  line-height: 1.6;
+}

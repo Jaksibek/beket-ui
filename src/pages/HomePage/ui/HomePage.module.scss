@@ -1,4 +1,88 @@
-.title {
-  color: var(--color-primary) !important;
+.homeWrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - var(--header-height));
+}
+
+.heroSection {
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%) !important; // Ultra-clean premium light gray-to-white gradient
+  padding: 80px 0 95px 0;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid #e2e8f0;
+
+  // Ultra-subtle light blue/gray shapes for high-end modern layout depth
+  &::before {
+    content: "";
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0, 145, 255, 0.05) 0%, rgba(0, 145, 255, 0) 70%); // Very soft sky-blue glow
+    top: -150px;
+    right: -50px;
+    pointer-events: none;
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0, 145, 255, 0.03) 0%, rgba(0, 145, 255, 0) 70%);
+    bottom: -200px;
+    left: -100px;
+    pointer-events: none;
+  }
+
+  @media screen and (max-width: 768px) {
+    padding: 50px 0 60px 0;
+  }
+}
+
+.heroContent {
+  max-width: 1250px;
+  margin: 0 auto;
   text-align: center;
+  position: relative;
+  z-index: 5;
+}
+
+.heroTitle {
+  color: #0f172a !important; // Premium deep slate charcoal
+  font-weight: 800 !important;
+  font-size: 44px !important; // Elegant larger size
+  line-height: 1.2 !important;
+  margin: 0 0 16px 0 !important;
+  letter-spacing: -1.2px !important;
+
+  @media screen and (max-width: 768px) {
+    font-size: 28px !important;
+    margin-bottom: 12px !important;
+  }
+}
+
+.heroSubtitle {
+  color: #475569 !important; // Clean slate gray
+  font-size: 19px !important;
+  font-weight: 450 !important;
+  margin: 0 0 36px 0 !important;
+  line-height: 1.5 !important;
+  letter-spacing: -0.2px;
+
+  @media screen and (max-width: 768px) {
+    font-size: 15px !important;
+    margin-bottom: 24px !important;
+  }
+}
+
+.mainContent {
+  background-color: var(--color-gray-light) !important;
+  padding: 40px 0 !important;
+  flex: 1;
+
+  @media screen and (max-width: 768px) {
+    padding: 24px 0 !important;
+  }
 }

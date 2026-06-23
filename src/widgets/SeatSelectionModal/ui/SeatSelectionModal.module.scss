@@ -79,8 +79,8 @@
         }
 
         &.selected .legendBox {
-            background-color: #3a22c5; // Solid brand color for selected
-            border: 2px solid #3a22c5;
+            background-color: var(--color-primary); // Solid brand color for selected
+            border: 2px solid var(--color-primary);
         }
     }
 }
@@ -99,14 +99,17 @@
     }
 
     .bookButton {
-        background-color: #3a22c5;
-        border-radius: 8px;
+        background-color: var(--color-primary);
+        border-radius: 12px;
         padding: 0 32px;
         height: 48px;
         font-size: 16px;
+        box-shadow: 0 4px 15px rgba(0, 145, 255, 0.3) !important;
+        transition: all 0.2s ease;
 
         &:hover {
-            background-color: #2d1a99 !important;
+            background-color: var(--color-brand-hover) !important;
+            box-shadow: 0 6px 20px rgba(0, 145, 255, 0.4) !important;
         }
     }
 }

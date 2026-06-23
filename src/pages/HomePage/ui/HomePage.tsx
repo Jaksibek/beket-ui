@@ -6,23 +6,41 @@ import { useTranslation } from "react-i18next";
 import SearchingTicket from "./SearchingTicket/SearchingTicket";
 import { StepsTicket } from "@/shared/ui/StepsTicket";
 import { useResponsive } from "@/shared/lib/hooks/useResponsive";
+import { PopularDestinations } from "./PopularDestinations/PopularDestinations";
+import { BeketFeatures } from "./BeketFeatures/BeketFeatures";
 
-const { Title } = Typography;
+const { Title, Paragraph } = Typography;
 
 function HomePage() {
   const { t } = useTranslation();
   const { xs } = useResponsive();
 
   return (
-    <Section>
-      <Container>
-        <Title level={xs ? 4 : 2} className={styles.title}>
-          {t("Buy or book tickets")}
-        </Title>
-        <SearchingTicket />
-        <StepsTicket />
-      </Container>
-    </Section>
+    <div className={styles.homeWrapper}>
+      {/* Immersive Deep Navy Hero section */}
+      <div className={styles.heroSection}>
+        <Container>
+          <div className={styles.heroContent}>
+            <Title level={xs ? 3 : 1} className={styles.heroTitle}>
+              {t("Быстрые и надежные автобусные рейсы")}
+            </Title>
+            <Paragraph className={styles.heroSubtitle}>
+              {t("Покупайте автобусные билеты онлайн по всему Казахстану и СНГ по выгодным ценам")}
+            </Paragraph>
+            <SearchingTicket />
+          </div>
+        </Container>
+      </div>
+
+      {/* Main Content Area */}
+      <Section className={styles.mainContent}>
+        <Container>
+          <StepsTicket />
+          <PopularDestinations />
+          <BeketFeatures />
+        </Container>
+      </Section>
+    </div>
   );
 }
 

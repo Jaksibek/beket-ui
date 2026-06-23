@@ -3,4 +3,11 @@ export const appRoutes = {
   search: "/search",
   about: "/about",
   booking: "/booking",
+
+  // Carrier (Admin) Routes
+  carrierLogin: "/carrier/login",
+  carrierDashboard: "/carrier/dashboard",
+  carrierFleet: "/carrier/fleet",
+  carrierRoutes: "/carrier/routes",
+  carrierTrips: "/carrier/trips",
 };

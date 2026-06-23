@@ -15,7 +15,11 @@ function AppConfigProvider({ children }: IProps) {
         token: {
           fontFamily: "var(--font-roboto)",
           fontSize: sm ? 16 : 14,
-          borderRadius: 7,
+          borderRadius: 12,
+          colorPrimary: "#0091FF", // Vibrant sky-blue primary color
+          colorSuccess: "#0091FF",
+          colorLink: "#0091FF",
+          colorLinkHover: "#0077e6",
         },
         components: {
           Layout: {
