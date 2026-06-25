@@ -10,4 +10,6 @@ export const appRoutes = {
   carrierFleet: "/carrier/fleet",
   carrierRoutes: "/carrier/routes",
   carrierTrips: "/carrier/trips",
+  carrierSales: "/carrier/sales",
+  carrierEmployees: "/carrier/employees",
 };

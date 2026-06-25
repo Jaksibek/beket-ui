@@ -38,6 +38,8 @@ function CarrierLoginPage() {
                 localStorage.setItem("carrier_id", res.data.carrierId || "");
                 localStorage.setItem("carrier_email", res.data.email || "");
                 localStorage.setItem("carrier_fullname", res.data.fullName || "");
+                localStorage.setItem("carrier_roles", JSON.stringify(res.data.roles || []));
+                localStorage.setItem("carrier_phone", res.data.phoneNumber || "");
                 message.success("Успешная авторизация!");
                 navigate(appRoutes.carrierDashboard);
             }
