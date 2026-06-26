@@ -18,7 +18,8 @@ import {
   message,
   Tag,
   Flex,
-  Spin
+  Spin,
+  Segmented
 } from "antd";
 import {
   DashboardOutlined,
@@ -31,7 +32,9 @@ import {
   UserOutlined,
   ShoppingCartOutlined,
   TeamOutlined,
-  SettingOutlined
+  SettingOutlined,
+  EditOutlined,
+  DeleteOutlined
 } from "@ant-design/icons";
 import { authApi } from "@/shared/api";
 import { appRoutes } from "@/shared/config/router";
@@ -149,10 +152,22 @@ function CarrierDashboardPage() {
   const [isRouteModalOpen, setIsRouteModalOpen] = useState(false);
   const [isTripModalOpen, setIsTripModalOpen] = useState(false);
 
+  // Editing state
+  const [editingBus, setEditingBus] = useState<any | null>(null);
+  const [editingRoute, setEditingRoute] = useState<any | null>(null);
+  const [editingTrip, setEditingTrip] = useState<any | null>(null);
+  const [editingEmployee, setEditingEmployee] = useState<any | null>(null);
+
   // Forms references
   const [busForm] = Form.useForm();
   const [routeForm] = Form.useForm();
   const [tripForm] = Form.useForm();
+
+  // Passenger lists & edits state
+  const [activeSalesTab, setActiveSalesTab] = useState<string>("scheme");
+  const [isPassengerEditModalOpen, setIsPassengerEditModalOpen] = useState(false);
+  const [editingPassenger, setEditingPassenger] = useState<any | null>(null);
+  const [passengerEditForm] = Form.useForm();
 
   // Selected brand's models dynamic listing in form
   const [selectedBrandModels, setSelectedBrandModels] = useState<any[]>([]);
@@ -237,25 +252,57 @@ function CarrierDashboardPage() {
     }
   };
 
-  const handleAddEmployee = async (values: any) => {
+  const startEditEmployee = (emp: any) => {
+    setEditingEmployee(emp);
+    employeeForm.setFieldsValue({
+      phoneNumber: emp.phoneNumber,
+      firstName: emp.firstName,
+      lastName: emp.lastName,
+      email: emp.email,
+      password: "" // Blank by default
+    });
+    setIsEmployeeModalOpen(true);
+  };
+
+  const handleSaveEmployee = async (values: any) => {
     setEmployeeSubmitting(true);
     try {
-      await authApi.post("/api/v1/carrier/employees", {
+      const payload = {
         phoneNumber: values.phoneNumber,
-        password: values.password,
         firstName: values.firstName,
         lastName: values.lastName,
-        email: values.email
-      });
-      message.success("Агент успешно добавлен!");
+        email: values.email,
+        password: values.password || null
+      };
+
+      if (editingEmployee) {
+        await authApi.put(`/api/v1/carrier/employees/${editingEmployee.id}`, payload);
+        message.success("Данные агента успешно обновлены!");
+      } else {
+        await authApi.post("/api/v1/carrier/employees", payload);
+        message.success("Агент успешно добавлен!");
+      }
       setIsEmployeeModalOpen(false);
+      setEditingEmployee(null);
       employeeForm.resetFields();
       fetchEmployees();
     } catch (err: any) {
       console.error(err);
-      message.error(err.response?.data || "Ошибка при добавлении агента");
+      message.error(err.response?.data || "Ошибка при сохранении агента");
     } finally {
       setEmployeeSubmitting(false);
+    }
+  };
+
+  const handleDeleteEmployee = async (id: string) => {
+    if (!window.confirm("Вы уверены, что хотите удалить этого агента?")) return;
+    try {
+      await authApi.delete(`/api/v1/carrier/employees/${id}`);
+      message.success("Агент успешно удален!");
+      fetchEmployees();
+    } catch (err: any) {
+      console.error(err);
+      message.error(err.response?.data || "Ошибка при удалении агента");
     }
   };
 
@@ -323,9 +370,26 @@ function CarrierDashboardPage() {
   }, [navigate, location.pathname]);
 
   // Operations
-  const handleAddBus = async (values: any) => {
+  const startEditBus = (bus: any) => {
+    setEditingBus(bus);
+    const selectedBrand = brands.find(b => b.id === bus.brandId);
+    setSelectedBrandModels(selectedBrand?.models || []);
+    busForm.setFieldsValue({
+      plateNumber: bus.plateNumber,
+      brandId: bus.brandId,
+      modelId: bus.modelId,
+      colorId: bus.colorId,
+      hasAC: bus.hasAC,
+      hasWifi: bus.hasWifi,
+      hasCharger: bus.hasCharger,
+      hasTv: bus.hasTv
+    });
+    setIsBusModalOpen(true);
+  };
+
+  const handleSaveBus = async (values: any) => {
     try {
-      await authApi.post("/api/v1/carrier/buses", {
+      const payload = {
         plateNumber: values.plateNumber,
         brandId: values.brandId,
         modelId: values.modelId,
@@ -334,14 +398,22 @@ function CarrierDashboardPage() {
         hasCharger: values.hasCharger || false,
         hasWifi: values.hasWifi || false,
         hasTv: values.hasTv || false
-      });
-      message.success("Автобус успешно добавлен");
+      };
+
+      if (editingBus) {
+        await authApi.put(`/api/v1/carrier/buses/${editingBus.id}`, payload);
+        message.success("Автобус успешно обновлен");
+      } else {
+        await authApi.post("/api/v1/carrier/buses", payload);
+        message.success("Автобус успешно добавлен");
+      }
       setIsBusModalOpen(false);
+      setEditingBus(null);
       busForm.resetFields();
       fetchBuses();
     } catch (err: any) {
       console.error(err);
-      message.error("Ошибка при добавлении автобуса");
+      message.error(editingBus ? "Ошибка при обновлении автобуса" : "Ошибка при добавлении автобуса");
     }
   };
 
@@ -357,20 +429,38 @@ function CarrierDashboardPage() {
     }
   };
 
-  const handleAddRoute = async (values: any) => {
+  const startEditRoute = (route: any) => {
+    setEditingRoute(route);
+    routeForm.setFieldsValue({
+      fromStationId: route.fromStationId,
+      toStationId: route.toStationId,
+      distanceKm: route.distanceKm
+    });
+    setIsRouteModalOpen(true);
+  };
+
+  const handleSaveRoute = async (values: any) => {
     try {
-      await authApi.post("/api/v1/carrier/routes", {
+      const payload = {
         fromStationId: values.fromStationId,
         toStationId: values.toStationId,
         distanceKm: values.distanceKm
-      });
-      message.success("Маршрут успешно добавлен");
+      };
+
+      if (editingRoute) {
+        await authApi.put(`/api/v1/carrier/routes/${editingRoute.id}`, payload);
+        message.success("Маршрут успешно обновлен");
+      } else {
+        await authApi.post("/api/v1/carrier/routes", payload);
+        message.success("Маршрут успешно добавлен");
+      }
       setIsRouteModalOpen(false);
+      setEditingRoute(null);
       routeForm.resetFields();
       fetchRoutes();
     } catch (err: any) {
       console.error(err);
-      message.error("Ошибка при добавлении маршрута");
+      message.error(editingRoute ? "Ошибка при обновлении маршрута" : "Ошибка при добавлении маршрута");
     }
   };
 
@@ -386,25 +476,44 @@ function CarrierDashboardPage() {
     }
   };
 
-  const handleAddTrip = async (values: any) => {
+  const startEditTrip = (trip: any) => {
+    setEditingTrip(trip);
+    tripForm.setFieldsValue({
+      routeId: trip.routeId,
+      busId: trip.busId,
+      time: [dayjs(trip.departureTime), dayjs(trip.arrivalTime)],
+      price: trip.price
+    });
+    setIsTripModalOpen(true);
+  };
+
+  const handleSaveTrip = async (values: any) => {
     try {
       const departureTime = values.time[0].toISOString();
       const arrivalTime = values.time[1].toISOString();
 
-      await authApi.post("/api/v1/carrier/trips", {
+      const payload = {
         routeId: values.routeId,
         busId: values.busId,
         departureTime,
         arrivalTime,
         price: values.price
-      });
-      message.success("Рейс успешно добавлен в расписание");
+      };
+
+      if (editingTrip) {
+        await authApi.put(`/api/v1/carrier/trips/${editingTrip.id}`, payload);
+        message.success("Рейс успешно обновлен");
+      } else {
+        await authApi.post("/api/v1/carrier/trips", payload);
+        message.success("Рейс успешно добавлен в расписание");
+      }
       setIsTripModalOpen(false);
+      setEditingTrip(null);
       tripForm.resetFields();
       fetchTrips();
     } catch (err: any) {
       console.error(err);
-      message.error(err.response?.data || "Ошибка при добавлении рейса");
+      message.error(editingTrip ? (err.response?.data || "Ошибка при обновлении рейса") : "Ошибка при добавлении рейса");
     }
   };
 
@@ -568,6 +677,155 @@ function CarrierDashboardPage() {
     }
   };
 
+  const startEditPassengerDetails = (seatNumber: string, passenger: any) => {
+    setEditingPassenger({ seatNumber, passenger });
+    passengerEditForm.setFieldsValue({
+      firstName: passenger.firstName,
+      lastName: passenger.lastName,
+      middleName: passenger.middleName,
+      documentType: passenger.documentType || "passport",
+      documentNumber: passenger.documentNumber,
+      iin: passenger.iin,
+      phoneNumber: passenger.buyerPhone || ""
+    });
+    setIsPassengerEditModalOpen(true);
+  };
+
+  const handleSavePassengerDetails = async (values: any) => {
+    const tripId = selectedTrip?.id || activeSalesTrip?.id;
+    if (!tripId || !editingPassenger) return;
+    try {
+      await authApi.put(`/api/v1/carrier/trips/${tripId}/seats/${editingPassenger.seatNumber}/passenger`, {
+        firstName: values.firstName,
+        lastName: values.lastName,
+        middleName: values.middleName,
+        documentType: values.documentType,
+        documentNumber: values.documentNumber,
+        iin: values.iin,
+        phoneNumber: values.phoneNumber
+      });
+      message.success("Данные пассажира успешно обновлены!");
+      setIsPassengerEditModalOpen(false);
+      setEditingPassenger(null);
+      fetchTripSeats(tripId);
+      fetchTrips();
+    } catch (err: any) {
+      console.error(err);
+      message.error(err.response?.data || "Ошибка при обновлении данных пассажира");
+    }
+  };
+
+  const renderPassengersListTable = () => {
+    const bookedSeats = seatsData.filter(s => s.status === "Booked" || s.status === "Reserved");
+
+    const columns = [
+      {
+        title: "Место",
+        dataIndex: "seatNumber",
+        key: "seatNumber",
+        width: 80,
+        render: (text: string) => <Tag color="blue" style={{ fontSize: 14 }}>{text}</Tag>,
+        sorter: (a: any, b: any) => Number(a.seatNumber) - Number(b.seatNumber)
+      },
+      {
+        title: "ФИО пассажира",
+        key: "name",
+        render: (_: any, record: any) => {
+          const p = record.passenger;
+          if (!p) return <Text type="secondary">— (Онлайн покупка без данных)</Text>;
+          return <Text strong>{p.lastName} {p.firstName} {p.middleName || ""}</Text>;
+        }
+      },
+      {
+        title: "Телефон",
+        key: "phone",
+        render: (_: any, record: any) => {
+          const p = record.passenger;
+          if (!p || !p.buyerPhone) return <Text type="secondary">—</Text>;
+          return <a href={`tel:${p.buyerPhone}`} style={{ color: "#2563eb", fontWeight: "bold" }}>{p.buyerPhone}</a>;
+        }
+      },
+      {
+        title: "Документ",
+        key: "document",
+        render: (_: any, record: any) => {
+          const p = record.passenger;
+          if (!p) return <Text type="secondary">—</Text>;
+          const docTypeStr = p.documentType === "passport" ? "Удост." : p.documentType === "foreign_passport" ? "Паспорт" : p.documentType || "—";
+          return (
+            <div>
+              <div>{docTypeStr} №{p.documentNumber}</div>
+              {p.iin && <div style={{ fontSize: 12, color: "#64748b" }}>ИИН: {p.iin}</div>}
+            </div>
+          );
+        }
+      },
+      {
+        title: "Билет",
+        key: "ticket",
+        render: (_: any, record: any) => {
+          const p = record.passenger;
+          if (!p) return <Text type="secondary">—</Text>;
+          return (
+            <div>
+              <Tag color="purple">{p.ticketNumber || "—"}</Tag>
+              {p.buyerEmail !== "manual@beket.kz" && <div style={{ fontSize: 11, color: "#64748b" }}>{p.buyerEmail}</div>}
+            </div>
+          );
+        }
+      },
+      {
+        title: "Статус",
+        dataIndex: "status",
+        key: "status",
+        render: (status: string) => (
+          <Tag color={status === "Booked" ? "success" : "warning"}>
+            {status === "Booked" ? "Продано" : "Забронировано"}
+          </Tag>
+        )
+      },
+      {
+        title: "Действия",
+        key: "action",
+        width: 150,
+        render: (_: any, record: any) => {
+          const p = record.passenger;
+          const isManual = p && p.buyerEmail === "manual@beket.kz";
+          return (
+            <Flex gap={8}>
+              {p && (
+                <Button
+                  icon={<EditOutlined />}
+                  onClick={() => startEditPassengerDetails(record.seatNumber, p)}
+                  title="Редактировать данные пассажира"
+                />
+              )}
+              {isManual && (
+                <Button
+                  danger
+                  icon={<DeleteOutlined />}
+                  onClick={() => handleCancelManualBooking(record.seatNumber)}
+                  title="Отменить продажу"
+                />
+              )}
+            </Flex>
+          );
+        }
+      }
+    ];
+
+    return (
+      <Table
+        dataSource={bookedSeats}
+        columns={columns}
+        rowKey="id"
+        bordered
+        pagination={false}
+        locale={{ emptyText: "На этом рейсе пока нет проданных мест" }}
+      />
+    );
+  };
+
   // Helper getters
   const getSeatState = (seatNum: number) => {
     const s = seatsData.find(x => x.seatNumber === String(seatNum));
@@ -625,9 +883,21 @@ function CarrierDashboardPage() {
         key: "action",
         width: 120,
         render: (_: any, record: any) => (
-          <Button danger size="middle" onClick={() => handleDeleteBus(record.id)}>
-            Удалить
-          </Button>
+          <Flex gap={8}>
+            <Button
+              icon={<EditOutlined />}
+              onClick={() => startEditBus(record)}
+              disabled={!profile.carrierId}
+              title="Редактировать"
+            />
+            <Button
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => handleDeleteBus(record.id)}
+              disabled={!profile.carrierId}
+              title="Удалить"
+            />
+          </Flex>
         )
       }
     ];
@@ -661,7 +931,7 @@ function CarrierDashboardPage() {
         key: "from",
         render: (_: any, record: any) => (
           <div>
-            <Text strong>{record.fromStationName || "ID: " + record.fromStationId}</Text>
+            <Text strong>{record.fromCityName ? `${record.fromCityName} (${record.fromStationName})` : (record.fromStationName || "ID: " + record.fromStationId)}</Text>
           </div>
         )
       },
@@ -670,7 +940,7 @@ function CarrierDashboardPage() {
         key: "to",
         render: (_: any, record: any) => (
           <div>
-            <Text strong>{record.toStationName || "ID: " + record.toStationId}</Text>
+            <Text strong>{record.toCityName ? `${record.toCityName} (${record.toStationName})` : (record.toStationName || "ID: " + record.toStationId)}</Text>
           </div>
         )
       },
@@ -685,9 +955,21 @@ function CarrierDashboardPage() {
         key: "action",
         width: 120,
         render: (_: any, record: any) => (
-          <Button danger size="middle" onClick={() => handleDeleteRoute(record.id)}>
-            Удалить
-          </Button>
+          <Flex gap={8}>
+            <Button
+              icon={<EditOutlined />}
+              onClick={() => startEditRoute(record)}
+              disabled={!profile.carrierId}
+              title="Редактировать"
+            />
+            <Button
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => handleDeleteRoute(record.id)}
+              disabled={!profile.carrierId}
+              title="Удалить"
+            />
+          </Flex>
         )
       }
     ];
@@ -720,10 +1002,7 @@ function CarrierDashboardPage() {
         title: "Маршрут",
         key: "routeName",
         render: (_: any, record: any) => {
-          // Find route name if route object loaded, or show from record
-          const rt = routes.find(r => r.id === record.routeId);
-          const name = rt ? `${rt.fromStationName} → ${rt.toStationName}` : record.routeName;
-          return <Text strong>{name}</Text>;
+          return <Text strong>{record.routeName}</Text>;
         }
       },
       {
@@ -771,17 +1050,32 @@ function CarrierDashboardPage() {
       {
         title: "Действия",
         key: "action",
-        width: 250,
+        width: 160,
         render: (_: any, record: any) => (
           <Flex gap={8}>
             {!isCashier && (
-              <Button icon={<SettingOutlined />} type="default" onClick={() => openSeatManagement(record)} disabled={!profile.carrierId}>
-                Настройка
-              </Button>
+              <Button
+                icon={<SettingOutlined />}
+                onClick={() => openSeatManagement(record)}
+                disabled={!profile.carrierId}
+                title="Настройка мест и цен"
+              />
             )}
-            <Button danger onClick={() => handleDeleteTrip(record.id)}>
-              Удалить
-            </Button>
+            {!isCashier && (
+              <Button
+                icon={<EditOutlined />}
+                onClick={() => startEditTrip(record)}
+                disabled={!profile.carrierId}
+                title="Редактировать рейс"
+              />
+            )}
+            <Button
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => handleDeleteTrip(record.id)}
+              disabled={!profile.carrierId}
+              title="Удалить рейс"
+            />
           </Flex>
         )
       }
@@ -823,7 +1117,9 @@ function CarrierDashboardPage() {
         key: "routeName",
         render: (_: any, record: any) => {
           const rt = routes.find(r => r.id === record.routeId);
-          const name = rt ? `${rt.fromStationName} → ${rt.toStationName}` : record.routeName;
+          const name = rt
+            ? `${rt.fromCityName ? rt.fromCityName + ' (' + rt.fromStationName + ')' : rt.fromStationName} → ${rt.toCityName ? rt.toCityName + ' (' + rt.toStationName + ')' : rt.toStationName}`
+            : record.routeName;
           return <Text strong style={{ fontSize: 15 }}>{name}</Text>;
         }
       },
@@ -916,169 +1212,190 @@ function CarrierDashboardPage() {
             <Spin size="large" tip="Загрузка схемы мест..." />
           </div>
         ) : (
-          <div className={styles.seatModalContainer}>
-            {/* Left: Custom Bus scheme representation */}
-            <div className={styles.busLayoutContainer}>
-              <div className={styles.schemeContainer}>
-                <div className={styles.seatRow}>
-                  {[...LAYOUT_COLUMNS].reverse().map((col, colIndex) => (
-                    <div key={colIndex} className={styles.seatsGrid}>
-                      {col.map((cell, rowIndex) => {
-                        if (cell === null) {
-                          return <div key={`empty-${colIndex}-${rowIndex}`} className={styles.emptySpace} />;
-                        }
-                        if (cell === "driver") {
-                          return (
-                            <div key={`driver-${colIndex}-${rowIndex}`} className={styles.driverCell}>
-                              <div className={styles.wheel}></div>
-                            </div>
-                          );
-                        }
-                        if (cell === "door") {
-                          return <div key={`door-${colIndex}-${rowIndex}`} className={styles.facility}>ВХОД</div>;
-                        }
+          <Flex vertical gap={16} style={{ width: "100%" }}>
+            <Segmented
+              options={[
+                { label: "Схема мест (Продажа)", value: "scheme" },
+                { label: `Список пассажиров (${seatsData.filter(s => s.status === 'Booked' || s.status === 'Reserved').length} мест)`, value: "passengers" }
+              ]}
+              value={activeSalesTab}
+              onChange={(val) => {
+                setActiveSalesTab(val as string);
+                setSelectedSeats([]);
+              }}
+              style={{ marginBottom: 16 }}
+              size="large"
+              block
+            />
 
-                        const seatNum = cell as number;
-                        const { status, price } = getSeatState(seatNum);
+            {activeSalesTab === "scheme" ? (
+              <div className={styles.seatModalContainer}>
+                {/* Left: Custom Bus scheme representation */}
+                <div className={styles.busLayoutContainer}>
+                  <div className={styles.schemeContainer}>
+                    <div className={styles.seatRow}>
+                      {[...LAYOUT_COLUMNS].reverse().map((col, colIndex) => (
+                        <div key={colIndex} className={styles.seatsGrid}>
+                          {col.map((cell, rowIndex) => {
+                            if (cell === null) {
+                              return <div key={`empty-${colIndex}-${rowIndex}`} className={styles.emptySpace} />;
+                            }
+                            if (cell === "driver") {
+                              return (
+                                <div key={`driver-${colIndex}-${rowIndex}`} className={styles.driverCell}>
+                                  <div className={styles.wheel}></div>
+                                </div>
+                              );
+                            }
+                            if (cell === "door") {
+                              return <div key={`door-${colIndex}-${rowIndex}`} className={styles.facility}>ВХОД</div>;
+                            }
 
-                        return (
-                          <div
-                            key={seatNum}
-                            className={`${styles.customSeat} ${styles[status]}`}
-                            onClick={() => handleSeatClick(seatNum)}
-                          >
-                            <span className={styles.seatNum}>{seatNum}</span>
-                            {price > 0 && <span className={styles.seatPrice}>{price} ₸</span>}
-                          </div>
-                        );
-                      })}
+                            const seatNum = cell as number;
+                            const { status, price } = getSeatState(seatNum);
+
+                            return (
+                              <div
+                                key={seatNum}
+                                className={`${styles.customSeat} ${styles[status]}`}
+                                onClick={() => handleSeatClick(seatNum)}
+                              >
+                                <span className={styles.seatNum}>{seatNum}</span>
+                                {price > 0 && <span className={styles.seatPrice}>{price} ₸</span>}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Right: Side operations pane */}
-            <div className={styles.sidePanel}>
-              {/* Legend */}
-              <div>
-                <Text strong style={{ display: "block", marginBottom: 10 }}>Обозначения мест</Text>
-                <Flex vertical gap={6}>
-                  <Flex align="center" gap={8}>
-                    <div className={`${styles.legendBox} ${styles.free}`}></div>
-                    <Text>Свободно</Text>
-                  </Flex>
-                  <Flex align="center" gap={8}>
-                    <div className={`${styles.legendBox} ${styles.reserved}`}></div>
-                    <Text>Бронь (сессия)</Text>
-                  </Flex>
-                  <Flex align="center" gap={8}>
-                    <div className={`${styles.legendBox} ${styles.booked}`}></div>
-                    <Text>Продано / Занято</Text>
-                  </Flex>
-                  <Flex align="center" gap={8}>
-                    <div className={`${styles.legendBox} ${styles.selected}`}></div>
-                    <Text>Выбрано вами</Text>
-                  </Flex>
-                </Flex>
-              </div>
-
-              <hr style={{ border: "0.5px solid #e2e8f0", margin: "4px 0" }} />
-
-              {/* Dynamic details / Actions form */}
-              {selectedSeats.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "20px 0" }}>
-                  <Text type="secondary">Выберите свободные места на схеме автобуса для оформления оффлайн-продажи.</Text>
-                </div>
-              ) : (() => {
-                const firstSeatNum = selectedSeats[0];
-                const seatInfo = seatsData.find(s => s.seatNumber === String(firstSeatNum));
-                const isBooked = seatInfo && seatInfo.status === "Booked";
-                const isReserved = seatInfo && seatInfo.status === "Reserved";
-
-                if (isBooked || isReserved) {
-                  const passenger = seatInfo?.passenger;
-                  const isManualSale = passenger && passenger.buyerEmail === "manual@beket.kz";
-
-                  return (
-                    <div>
-                      <Title level={5} style={{ marginBottom: 12 }}>
-                        Место {firstSeatNum} ({isBooked ? "Продано" : "Зарезервировано"})
-                      </Title>
-                      
-                      <Card size="small" title="Информация о пассажире" style={{ background: "#fff", marginBottom: 16 }}>
-                        {passenger ? (
-                          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                            <div><Text type="secondary">ФИО:</Text> <strong>{passenger.lastName} {passenger.firstName} {passenger.middleName || ""}</strong></div>
-                            <div><Text type="secondary">Документ:</Text> {passenger.documentType === "passport" ? "Удостоверение" : passenger.documentType === "foreign_passport" ? "Паспорт" : passenger.documentType || "—"} №{passenger.documentNumber || "—"}</div>
-                            {passenger.iin && <div><Text type="secondary">ИИН:</Text> {passenger.iin}</div>}
-                            <div><Text type="secondary">Билет:</Text> <Tag color="blue">{passenger.ticketNumber || "—"}</Tag></div>
-                            <div><Text type="secondary">Телефон:</Text> {passenger.buyerPhone || "—"}</div>
-                            <div><Text type="secondary">Email:</Text> {passenger.buyerEmail || "—"}</div>
-                          </div>
-                        ) : (
-                          <Text type="secondary">Детали пассажира недоступны (онлайн покупка).</Text>
-                        )}
-                      </Card>
-
-                      {isManualSale && (
-                        <Button 
-                          type="primary" 
-                          danger 
-                          block 
-                          loading={cancelLoading} 
-                          onClick={() => handleCancelManualBooking(String(firstSeatNum))}
-                        >
-                          Отменить продажу
-                        </Button>
-                      )}
-                    </div>
-                  );
-                }
-
-                // If not booked/reserved (i.e. free seats are selected):
-                return (
-                  <div>
-                    <Title level={5}>Выбрано мест: {selectedSeats.length}</Title>
-                    <Text style={{ display: "block", marginBottom: 6 }}>Номера: {selectedSeats.join(", ")}</Text>
-                    <Text strong style={{ display: "block", marginBottom: 12, fontSize: 15, color: "#2563eb" }}>
-                      Итого к оплате: {selectedSeats.reduce((acc, num) => acc + (getSeatState(num).price || 0), 0)} KZT
-                    </Text>
-
-                    {/* Manual sale form */}
-                    <Card size="small" title="Пассажирские данные" style={{ background: "#fff" }}>
-                      <Form form={passengerForm} layout="vertical" onFinish={handleManualBooking}>
-                        <Form.Item name="lastName" label="Фамилия" rules={[{ required: true, message: "Введите фамилию" }]}>
-                          <Input placeholder="Иванов" size="small" />
-                        </Form.Item>
-                        <Form.Item name="firstName" label="Имя" rules={[{ required: true, message: "Введите имя" }]}>
-                          <Input placeholder="Иван" size="small" />
-                        </Form.Item>
-                        <Form.Item name="middleName" label="Отчество">
-                          <Input placeholder="Иванович" size="small" />
-                        </Form.Item>
-                        <Form.Item name="documentType" label="Тип документа" initialValue="passport">
-                          <Select size="small">
-                            <Select.Option value="passport">Удостоверение</Select.Option>
-                            <Select.Option value="foreign_passport">Паспорт</Select.Option>
-                          </Select>
-                        </Form.Item>
-                        <Form.Item name="documentNumber" label="Номер документа" rules={[{ required: true, message: "Введите номер документа" }]}>
-                          <Input placeholder="012345678" size="small" />
-                        </Form.Item>
-                        <Form.Item name="iin" label="ИИН (12 цифр)">
-                          <Input placeholder="123456789012" maxLength={12} size="small" />
-                        </Form.Item>
-                        <Button type="primary" htmlType="submit" danger block loading={manualBookingLoading} icon={<CheckOutlined />}>
-                          Оформить продажу
-                        </Button>
-                      </Form>
-                    </Card>
                   </div>
-                );
-              })()}
-            </div>
-          </div>
+                </div>
+
+                {/* Right: Side operations pane */}
+                <div className={styles.sidePanel}>
+                  {/* Legend */}
+                  <div>
+                    <Text strong style={{ display: "block", marginBottom: 10 }}>Обозначения мест</Text>
+                    <Flex vertical gap={6}>
+                      <Flex align="center" gap={8}>
+                        <div className={`${styles.legendBox} ${styles.free}`}></div>
+                        <Text>Свободно</Text>
+                      </Flex>
+                      <Flex align="center" gap={8}>
+                        <div className={`${styles.legendBox} ${styles.reserved}`}></div>
+                        <Text>Бронь (сессия)</Text>
+                      </Flex>
+                      <Flex align="center" gap={8}>
+                        <div className={`${styles.legendBox} ${styles.booked}`}></div>
+                        <Text>Продано / Занято</Text>
+                      </Flex>
+                      <Flex align="center" gap={8}>
+                        <div className={`${styles.legendBox} ${styles.selected}`}></div>
+                        <Text>Выбрано вами</Text>
+                      </Flex>
+                    </Flex>
+                  </div>
+
+                  <hr style={{ border: "0.5px solid #e2e8f0", margin: "4px 0" }} />
+
+                  {/* Dynamic details / Actions form */}
+                  {selectedSeats.length === 0 ? (
+                    <div style={{ textAlign: "center", padding: "20px 0" }}>
+                      <Text type="secondary">Выберите свободные места на схеме автобуса для оформления оффлайн-продажи.</Text>
+                    </div>
+                  ) : (() => {
+                    const firstSeatNum = selectedSeats[0];
+                    const seatInfo = seatsData.find(s => s.seatNumber === String(firstSeatNum));
+                    const isBooked = seatInfo && seatInfo.status === "Booked";
+                    const isReserved = seatInfo && seatInfo.status === "Reserved";
+
+                    if (isBooked || isReserved) {
+                      const passenger = seatInfo?.passenger;
+                      const isManualSale = passenger && passenger.buyerEmail === "manual@beket.kz";
+
+                      return (
+                        <div>
+                          <Title level={5} style={{ marginBottom: 12 }}>
+                            Место {firstSeatNum} ({isBooked ? "Продано" : "Зарезервировано"})
+                          </Title>
+                          
+                          <Card size="small" title="Информация о пассажире" style={{ background: "#fff", marginBottom: 16 }}>
+                            {passenger ? (
+                              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                                <div><Text type="secondary">ФИО:</Text> <strong>{passenger.lastName} {passenger.firstName} {passenger.middleName || ""}</strong></div>
+                                <div><Text type="secondary">Документ:</Text> {passenger.documentType === "passport" ? "Удостоверение" : passenger.documentType === "foreign_passport" ? "Паспорт" : passenger.documentType || "—"} №{passenger.documentNumber || "—"}</div>
+                                {passenger.iin && <div><Text type="secondary">ИИН:</Text> {passenger.iin}</div>}
+                                <div><Text type="secondary">Билет:</Text> <Tag color="blue">{passenger.ticketNumber || "—"}</Tag></div>
+                                <div><Text type="secondary">Телефон:</Text> {passenger.buyerPhone || "—"}</div>
+                                <div><Text type="secondary">Email:</Text> {passenger.buyerEmail || "—"}</div>
+                              </div>
+                            ) : (
+                              <Text type="secondary">Детали пассажира недоступны (онлайн покупка).</Text>
+                            )}
+                          </Card>
+
+                          {isManualSale && (
+                            <Button 
+                              type="primary" 
+                              danger 
+                              block 
+                              loading={cancelLoading} 
+                              onClick={() => handleCancelManualBooking(String(firstSeatNum))}
+                            >
+                              Отменить продажу
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    // If not booked/reserved (i.e. free seats are selected):
+                    return (
+                      <div>
+                        <Title level={5}>Выбрано мест: {selectedSeats.length}</Title>
+                        <Text style={{ display: "block", marginBottom: 6 }}>Номера: {selectedSeats.join(", ")}</Text>
+                        <Text strong style={{ display: "block", marginBottom: 12, fontSize: 15, color: "#2563eb" }}>
+                          Итого к оплате: {selectedSeats.reduce((acc, num) => acc + (getSeatState(num).price || 0), 0)} KZT
+                        </Text>
+
+                        {/* Manual sale form */}
+                        <Card size="small" title="Пассажирские данные" style={{ background: "#fff" }}>
+                          <Form form={passengerForm} layout="vertical" onFinish={handleManualBooking}>
+                            <Form.Item name="lastName" label="Фамилия" rules={[{ required: true, message: "Введите фамилию" }]}>
+                              <Input placeholder="Иванов" size="small" />
+                            </Form.Item>
+                            <Form.Item name="firstName" label="Имя" rules={[{ required: true, message: "Введите имя" }]}>
+                              <Input placeholder="Иван" size="small" />
+                            </Form.Item>
+                            <Form.Item name="middleName" label="Отчество">
+                              <Input placeholder="Иванович" size="small" />
+                            </Form.Item>
+                            <Form.Item name="documentType" label="Тип документа" initialValue="passport">
+                              <Select size="small">
+                                <Select.Option value="passport">Удостоверение</Select.Option>
+                                <Select.Option value="foreign_passport">Паспорт</Select.Option>
+                              </Select>
+                            </Form.Item>
+                            <Form.Item name="documentNumber" label="Номер документа" rules={[{ required: true, message: "Введите номер документа" }]}>
+                              <Input placeholder="012345678" size="small" />
+                            </Form.Item>
+                            <Form.Item name="iin" label="ИИН (12 цифр)">
+                              <Input placeholder="123456789012" maxLength={12} size="small" />
+                            </Form.Item>
+                            <Button type="primary" htmlType="submit" danger block loading={manualBookingLoading} icon={<CheckOutlined />}>
+                              Оформить продажу
+                            </Button>
+                          </Form>
+                        </Card>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            ) : (
+              renderPassengersListTable()
+            )}
+          </Flex>
         )}
       </Card>
     );
@@ -1138,6 +1455,26 @@ function CarrierDashboardPage() {
         dataIndex: "createdOn",
         key: "createdOn",
         render: (val: string) => val ? dayjs(val).format("DD.MM.YYYY HH:mm") : "—"
+      },
+      {
+        title: "Действия",
+        key: "action",
+        width: 120,
+        render: (_: any, record: any) => (
+          <Flex gap={8}>
+            <Button
+              icon={<EditOutlined />}
+              onClick={() => startEditEmployee(record)}
+              title="Редактировать агента"
+            />
+            <Button
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => handleDeleteEmployee(record.id)}
+              title="Удалить агента"
+            />
+          </Flex>
+        )
       }
     ];
 
@@ -1380,17 +1717,18 @@ function CarrierDashboardPage() {
 
       {/* 1. Modal: Add Bus */}
       <Modal
-        title="Зарегистрировать автобус"
+        title={editingBus ? "Редактировать автобус" : "Зарегистрировать автобус"}
         open={isBusModalOpen}
         onCancel={() => {
           setIsBusModalOpen(false);
+          setEditingBus(null);
           busForm.resetFields();
         }}
         onOk={() => busForm.submit()}
-        okText="Добавить"
+        okText={editingBus ? "Сохранить" : "Добавить"}
         cancelText="Отмена"
       >
-        <Form form={busForm} layout="vertical" onFinish={handleAddBus}>
+        <Form form={busForm} layout="vertical" onFinish={handleSaveBus}>
           <Form.Item
             name="plateNumber"
             label="Государственный регистрационный номер"
@@ -1462,17 +1800,18 @@ function CarrierDashboardPage() {
 
       {/* 2. Modal: Add Route */}
       <Modal
-        title="Создать направление"
+        title={editingRoute ? "Редактировать направление" : "Создать направление"}
         open={isRouteModalOpen}
         onCancel={() => {
           setIsRouteModalOpen(false);
+          setEditingRoute(null);
           routeForm.resetFields();
         }}
         onOk={() => routeForm.submit()}
-        okText="Добавить"
+        okText={editingRoute ? "Сохранить" : "Добавить"}
         cancelText="Отмена"
       >
-        <Form form={routeForm} layout="vertical" onFinish={handleAddRoute}>
+        <Form form={routeForm} layout="vertical" onFinish={handleSaveRoute}>
           <Form.Item
             name="fromStationId"
             label="Пункт Отправления"
@@ -1501,22 +1840,29 @@ function CarrierDashboardPage() {
             </Select>
           </Form.Item>
 
+          <Form.Item
+            name="distanceKm"
+            label="Дистанция (км, необязательно)"
+          >
+            <InputNumber min={1} style={{ width: "100%" }} placeholder="Например: 450" />
+          </Form.Item>
         </Form>
       </Modal>
 
       {/* 3. Modal: Add Trip */}
       <Modal
-        title="Запланировать рейс"
+        title={editingTrip ? "Редактировать рейс" : "Запланировать рейс"}
         open={isTripModalOpen}
         onCancel={() => {
           setIsTripModalOpen(false);
+          setEditingTrip(null);
           tripForm.resetFields();
         }}
         onOk={() => tripForm.submit()}
-        okText="Создать"
+        okText={editingTrip ? "Сохранить" : "Создать"}
         cancelText="Отмена"
       >
-        <Form form={tripForm} layout="vertical" onFinish={handleAddTrip}>
+        <Form form={tripForm} layout="vertical" onFinish={handleSaveTrip}>
           <Form.Item
             name="routeId"
             label="Маршрут следования"
@@ -1525,7 +1871,7 @@ function CarrierDashboardPage() {
             <Select placeholder="Выберите маршрут">
               {routes.map(r => (
                 <Select.Option key={r.id} value={r.id}>
-                  {r.fromStationName} → {r.toStationName} ({r.distanceKm} км)
+                  {r.fromCityName ? `${r.fromCityName} (${r.fromStationName})` : r.fromStationName} → {r.toCityName ? `${r.toCityName} (${r.toStationName})` : r.toStationName} ({r.distanceKm} км)
                 </Select.Option>
               ))}
             </Select>
@@ -1678,18 +2024,19 @@ function CarrierDashboardPage() {
 
       {/* 5. Modal: Add Employee */}
       <Modal
-        title="Добавить агента"
+        title={editingEmployee ? "Редактировать агента" : "Добавить агента"}
         open={isEmployeeModalOpen}
         onCancel={() => {
           setIsEmployeeModalOpen(false);
+          setEditingEmployee(null);
           employeeForm.resetFields();
         }}
         onOk={() => employeeForm.submit()}
-        okText="Добавить"
+        okText={editingEmployee ? "Сохранить" : "Добавить"}
         cancelText="Отмена"
         confirmLoading={employeeSubmitting}
       >
-        <Form form={employeeForm} layout="vertical" onFinish={handleAddEmployee}>
+        <Form form={employeeForm} layout="vertical" onFinish={handleSaveEmployee}>
           <Form.Item
             name="phoneNumber"
             label="Номер телефона (Логин для входа)"
@@ -1700,9 +2047,9 @@ function CarrierDashboardPage() {
 
           <Form.Item
             name="password"
-            label="Пароль для входа"
+            label={editingEmployee ? "Пароль для входа (оставьте пустым, чтобы не менять)" : "Пароль для входа"}
             rules={[
-              { required: true, message: "Введите пароль" },
+              { required: !editingEmployee, message: "Введите пароль" },
               { min: 6, message: "Пароль должен быть не менее 6 символов" }
             ]}
           >
@@ -1731,6 +2078,47 @@ function CarrierDashboardPage() {
             rules={[{ type: "email", message: "Некорректный формат email" }]}
           >
             <Input placeholder="agent@example.com" />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* 6. Modal: Edit Passenger Details */}
+      <Modal
+        title={`Редактирование пассажира (Место ${editingPassenger?.seatNumber})`}
+        open={isPassengerEditModalOpen}
+        onCancel={() => {
+          setIsPassengerEditModalOpen(false);
+          setEditingPassenger(null);
+          passengerEditForm.resetFields();
+        }}
+        onOk={() => passengerEditForm.submit()}
+        okText="Сохранить"
+        cancelText="Отмена"
+      >
+        <Form form={passengerEditForm} layout="vertical" onFinish={handleSavePassengerDetails}>
+          <Form.Item name="lastName" label="Фамилия" rules={[{ required: true, message: "Введите фамилию" }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="firstName" label="Имя" rules={[{ required: true, message: "Введите имя" }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="middleName" label="Отчество">
+            <Input />
+          </Form.Item>
+          <Form.Item name="documentType" label="Тип документа" rules={[{ required: true, message: "Выберите тип документа" }]}>
+            <Select>
+              <Select.Option value="passport">Удостоверение</Select.Option>
+              <Select.Option value="foreign_passport">Паспорт</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item name="documentNumber" label="Номер документа" rules={[{ required: true, message: "Введите номер документа" }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="iin" label="ИИН">
+            <Input maxLength={12} placeholder="12 цифр" />
+          </Form.Item>
+          <Form.Item name="phoneNumber" label="Номер телефона">
+            <Input placeholder="+7 (7xx) xxx-xx-xx" />
           </Form.Item>
         </Form>
       </Modal>
