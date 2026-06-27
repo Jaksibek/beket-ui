@@ -11,5 +11,7 @@ export const appRoutes = {
   carrierRoutes: "/carrier/routes",
   carrierTrips: "/carrier/trips",
   carrierSales: "/carrier/sales",
+  carrierPassengers: "/carrier/passengers",
   carrierEmployees: "/carrier/employees",
+  carrierStats: "/carrier/stats",
 };

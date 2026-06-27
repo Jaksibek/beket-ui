@@ -29,7 +29,9 @@ function AppRoutes() {
           <Route path={appRoutes.carrierRoutes} element={<CarrierDashboardPage />} />
           <Route path={appRoutes.carrierTrips} element={<CarrierDashboardPage />} />
           <Route path={appRoutes.carrierSales} element={<CarrierDashboardPage />} />
+          <Route path={appRoutes.carrierPassengers} element={<CarrierDashboardPage />} />
           <Route path={appRoutes.carrierEmployees} element={<CarrierDashboardPage />} />
+          <Route path={appRoutes.carrierStats} element={<CarrierDashboardPage />} />
         </Route>
       </Route>
     </Routes>

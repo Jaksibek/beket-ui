@@ -1,25 +1,18 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
-  Typography,
-  Card,
-  Row,
-  Col,
-  Statistic,
-  Button,
-  Table,
   Modal,
   Form,
   Input,
-  InputNumber,
-  Switch,
   Select,
   DatePicker,
   message,
   Tag,
   Flex,
-  Spin,
-  Segmented
+  Row,
+  Col,
+  Switch,
+  InputNumber
 } from "antd";
 import {
   DashboardOutlined,
@@ -27,40 +20,27 @@ import {
   CompassOutlined,
   CalendarOutlined,
   LogoutOutlined,
-  PlusOutlined,
-  CheckOutlined,
   UserOutlined,
   ShoppingCartOutlined,
   TeamOutlined,
-  SettingOutlined,
-  EditOutlined,
-  DeleteOutlined
+  BarChartOutlined
 } from "@ant-design/icons";
 import { authApi } from "@/shared/api";
 import { appRoutes } from "@/shared/config/router";
 import dayjs from "dayjs";
 import styles from "./CarrierDashboardPage.module.scss";
 
-const { Title, Text } = Typography;
+// Modular Sections
+import { OverviewSection } from "../components/OverviewSection";
+import { FleetSection } from "../components/FleetSection";
+import { RoutesSection } from "../components/RoutesSection";
+import { TripsSection } from "../components/TripsSection";
+import { EmployeesSection } from "../components/EmployeesSection";
+import { SalesSection } from "../components/SalesSection";
+import { SeatManagementModal } from "../components/SeatManagementModal";
+import { SalesStatsSection } from "../components/SalesStatsSection";
 
-// 53 seats constant bus scheme layout mapping coordinates
-const LAYOUT_COLUMNS = [
-  ['driver', null, null, null, 'door'],
-  [1, 2, null, 3, 4],
-  [5, 6, null, 7, 8],
-  [9, 10, null, 11, 12],
-  [13, 14, null, 15, 16],
-  [17, 18, null, 19, 20],
-  [21, 22, null, 23, 24],
-  [null, null, null, null, 'door'],
-  [25, 26, null, 27, 28],
-  [29, 30, null, 31, 32],
-  [33, 34, null, 35, 36],
-  [37, 38, null, 39, 40],
-  [41, 42, null, 43, 44],
-  [45, 46, null, 47, 48],
-  [49, 50, 51, 52, 53]
-];
+
 
 function CarrierDashboardPage() {
   const location = useLocation();
@@ -77,7 +57,9 @@ function CarrierDashboardPage() {
           ? "sales"
           : location.pathname.includes("/employees")
             ? "employees"
-            : "overview";
+            : location.pathname.includes("/stats")
+              ? "stats"
+              : "overview";
 
   const handleMenuClick = (key: string) => {
     if (key === "overview") navigate(appRoutes.carrierDashboard);
@@ -86,6 +68,7 @@ function CarrierDashboardPage() {
     else if (key === "trips") navigate(appRoutes.carrierTrips);
     else if (key === "sales") navigate(appRoutes.carrierSales);
     else if (key === "employees") navigate(appRoutes.carrierEmployees);
+    else if (key === "stats") navigate(appRoutes.carrierStats);
   };
 
   // React active profile state, pre-filled from local storage but updated dynamically from API
@@ -96,6 +79,7 @@ function CarrierDashboardPage() {
     fullName: string | null;
     roles: string[];
     phoneNumber: string | null;
+    contactId: string | null;
   }>({
     carrierId: localStorage.getItem("carrier_id"),
     carrierName: localStorage.getItem("carrier_name"),
@@ -103,6 +87,7 @@ function CarrierDashboardPage() {
     fullName: localStorage.getItem("carrier_fullname"),
     roles: JSON.parse(localStorage.getItem("carrier_roles") || "[]"),
     phoneNumber: localStorage.getItem("carrier_phone"),
+    contactId: localStorage.getItem("carrier_contact_id"),
   });
 
   const isCashier = (profile.roles.includes("Cashier") || profile.roles.includes("Agent")) && !profile.roles.includes("Admin");
@@ -310,7 +295,7 @@ function CarrierDashboardPage() {
     try {
       const res = await authApi.get("/api/Auth/me");
       if (res.data) {
-        const { carrierId, carrierName, email, fullName, roles, phoneNumber } = res.data;
+        const { carrierId, carrierName, email, fullName, roles, phoneNumber, contactId } = res.data;
 
         const cachedCarrierId = localStorage.getItem("carrier_id");
 
@@ -320,6 +305,7 @@ function CarrierDashboardPage() {
         localStorage.setItem("carrier_fullname", fullName || "");
         localStorage.setItem("carrier_roles", JSON.stringify(roles || []));
         localStorage.setItem("carrier_phone", phoneNumber || "");
+        localStorage.setItem("carrier_contact_id", contactId || "");
 
         setProfile({
           carrierId,
@@ -327,7 +313,8 @@ function CarrierDashboardPage() {
           email,
           fullName,
           roles: roles || [],
-          phoneNumber: phoneNumber || null
+          phoneNumber: phoneNumber || null,
+          contactId: contactId || null
         });
 
         // If user was not linked in cache, but is now linked in database,
@@ -351,10 +338,15 @@ function CarrierDashboardPage() {
       return;
     }
 
+    if (location.pathname.includes("/passengers")) {
+      navigate(appRoutes.carrierSales);
+      return;
+    }
+
     // Role-based routing restriction
     const roles: string[] = JSON.parse(localStorage.getItem("carrier_roles") || "[]");
     const userIsCashier = roles.includes("Cashier") && !roles.includes("Admin");
-    if (userIsCashier && !location.pathname.includes("/sales")) {
+    if (userIsCashier && !location.pathname.includes("/sales") && !location.pathname.includes("/stats")) {
       navigate(appRoutes.carrierSales);
       return;
     }
@@ -644,7 +636,8 @@ function CarrierDashboardPage() {
         passengerMiddleName: values.middleName,
         documentType: values.documentType,
         documentNumber: values.documentNumber,
-        iin: values.iin
+        iin: values.iin,
+        passengerPhoneNumber: values.phoneNumber
       });
       message.success("Билеты успешно проданы вручную!");
       passengerForm.resetFields();
@@ -659,22 +652,31 @@ function CarrierDashboardPage() {
     }
   };
 
-  const handleCancelManualBooking = async (seatNumber: string) => {
-    const tripId = selectedTrip?.id || activeSalesTrip?.id;
-    if (!tripId) return;
-    setCancelLoading(true);
-    try {
-      await authApi.post(`/api/v1/carrier/trips/${tripId}/seats/${seatNumber}/cancel-manual`);
-      message.success("Продажа билета успешно отменена!");
-      setSelectedSeats([]);
-      fetchTripSeats(tripId);
-      fetchTrips();
-    } catch (err: any) {
-      console.error(err);
-      message.error(err.response?.data || "Ошибка при отмене продажи билета");
-    } finally {
-      setCancelLoading(false);
-    }
+  const handleCancelManualBooking = (seatNumber: string) => {
+    Modal.confirm({
+      title: "Подтверждение отмены",
+      content: `Вы действительно хотите отменить продажу билета на место ${seatNumber}?`,
+      okText: "Да, отменить",
+      okType: "danger",
+      cancelText: "Отмена",
+      onOk: async () => {
+        const tripId = selectedTrip?.id || activeSalesTrip?.id;
+        if (!tripId) return;
+        setCancelLoading(true);
+        try {
+          await authApi.post(`/api/v1/carrier/trips/${tripId}/seats/${seatNumber}/cancel-manual`);
+          message.success("Продажа билета успешно отменена!");
+          setSelectedSeats([]);
+          fetchTripSeats(tripId);
+          fetchTrips();
+        } catch (err: any) {
+          console.error(err);
+          message.error(err.response?.data || "Ошибка при отмене продажи билета");
+        } finally {
+          setCancelLoading(false);
+        }
+      }
+    });
   };
 
   const startEditPassengerDetails = (seatNumber: string, passenger: any) => {
@@ -715,868 +717,25 @@ function CarrierDashboardPage() {
     }
   };
 
-  const renderPassengersListTable = () => {
-    const bookedSeats = seatsData.filter(s => s.status === "Booked" || s.status === "Reserved");
 
-    const columns = [
-      {
-        title: "Место",
-        dataIndex: "seatNumber",
-        key: "seatNumber",
-        width: 80,
-        render: (text: string) => <Tag color="blue" style={{ fontSize: 14 }}>{text}</Tag>,
-        sorter: (a: any, b: any) => Number(a.seatNumber) - Number(b.seatNumber)
-      },
-      {
-        title: "ФИО пассажира",
-        key: "name",
-        render: (_: any, record: any) => {
-          const p = record.passenger;
-          if (!p) return <Text type="secondary">— (Онлайн покупка без данных)</Text>;
-          return <Text strong>{p.lastName} {p.firstName} {p.middleName || ""}</Text>;
-        }
-      },
-      {
-        title: "Телефон",
-        key: "phone",
-        render: (_: any, record: any) => {
-          const p = record.passenger;
-          if (!p || !p.buyerPhone) return <Text type="secondary">—</Text>;
-          return <a href={`tel:${p.buyerPhone}`} style={{ color: "#2563eb", fontWeight: "bold" }}>{p.buyerPhone}</a>;
-        }
-      },
-      {
-        title: "Документ",
-        key: "document",
-        render: (_: any, record: any) => {
-          const p = record.passenger;
-          if (!p) return <Text type="secondary">—</Text>;
-          const docTypeStr = p.documentType === "passport" ? "Удост." : p.documentType === "foreign_passport" ? "Паспорт" : p.documentType || "—";
-          return (
-            <div>
-              <div>{docTypeStr} №{p.documentNumber}</div>
-              {p.iin && <div style={{ fontSize: 12, color: "#64748b" }}>ИИН: {p.iin}</div>}
-            </div>
-          );
-        }
-      },
-      {
-        title: "Билет",
-        key: "ticket",
-        render: (_: any, record: any) => {
-          const p = record.passenger;
-          if (!p) return <Text type="secondary">—</Text>;
-          return (
-            <div>
-              <Tag color="purple">{p.ticketNumber || "—"}</Tag>
-              {p.buyerEmail !== "manual@beket.kz" && <div style={{ fontSize: 11, color: "#64748b" }}>{p.buyerEmail}</div>}
-            </div>
-          );
-        }
-      },
-      {
-        title: "Статус",
-        dataIndex: "status",
-        key: "status",
-        render: (status: string) => (
-          <Tag color={status === "Booked" ? "success" : "warning"}>
-            {status === "Booked" ? "Продано" : "Забронировано"}
-          </Tag>
-        )
-      },
-      {
-        title: "Действия",
-        key: "action",
-        width: 150,
-        render: (_: any, record: any) => {
-          const p = record.passenger;
-          const isManual = p && p.buyerEmail === "manual@beket.kz";
-          return (
-            <Flex gap={8}>
-              {p && (
-                <Button
-                  icon={<EditOutlined />}
-                  onClick={() => startEditPassengerDetails(record.seatNumber, p)}
-                  title="Редактировать данные пассажира"
-                />
-              )}
-              {isManual && (
-                <Button
-                  danger
-                  icon={<DeleteOutlined />}
-                  onClick={() => handleCancelManualBooking(record.seatNumber)}
-                  title="Отменить продажу"
-                />
-              )}
-            </Flex>
-          );
-        }
-      }
-    ];
-
-    return (
-      <Table
-        dataSource={bookedSeats}
-        columns={columns}
-        rowKey="id"
-        bordered
-        pagination={false}
-        locale={{ emptyText: "На этом рейсе пока нет проданных мест" }}
-      />
-    );
-  };
-
-  // Helper getters
-  const getSeatState = (seatNum: number) => {
-    const s = seatsData.find(x => x.seatNumber === String(seatNum));
-    if (!s) return { status: "free", price: 0, passenger: null };
-
-    const isSelected = selectedSeats.includes(seatNum);
-    if (isSelected) {
-      return { status: "selected", price: s.price, passenger: s.passenger, rawStatus: s.status };
-    }
-
-    return { status: s.status.toLowerCase(), price: s.price, passenger: s.passenger, rawStatus: s.status };
-  };
-
-  // Render helpers
-  const renderBusesTable = () => {
-    const columns = [
-      {
-        title: "Гос. номер",
-        dataIndex: "plateNumber",
-        key: "plateNumber",
-        render: (text: string) => <Text strong style={{ fontSize: 15 }}>{text}</Text>
-      },
-      {
-        title: "Марка",
-        dataIndex: "brandName",
-        key: "brandName",
-        render: (text: string) => text || <Text type="secondary">—</Text>
-      },
-      {
-        title: "Модель",
-        dataIndex: "modelName",
-        key: "modelName",
-        render: (text: string) => text || <Text type="secondary">—</Text>
-      },
-      {
-        title: "Цвет",
-        dataIndex: "colorName",
-        key: "colorName",
-        render: (text: string) => text || <Text type="secondary">—</Text>
-      },
-      {
-        title: "Удобства",
-        key: "comfort",
-        render: (_: any, record: any) => (
-          <Flex gap={4} wrap="wrap">
-            {record.hasAC && <Tag color="success" className={styles.comfortTag}>AC</Tag>}
-            {record.hasWifi && <Tag color="processing" className={styles.comfortTag}>Wi-Fi</Tag>}
-            {record.hasCharger && <Tag color="warning" className={styles.comfortTag}>Зарядки</Tag>}
-            {record.hasTv && <Tag color="default" className={styles.comfortTag}>TV</Tag>}
-          </Flex>
-        )
-      },
-      {
-        title: "Действия",
-        key: "action",
-        width: 120,
-        render: (_: any, record: any) => (
-          <Flex gap={8}>
-            <Button
-              icon={<EditOutlined />}
-              onClick={() => startEditBus(record)}
-              disabled={!profile.carrierId}
-              title="Редактировать"
-            />
-            <Button
-              danger
-              icon={<DeleteOutlined />}
-              onClick={() => handleDeleteBus(record.id)}
-              disabled={!profile.carrierId}
-              title="Удалить"
-            />
-          </Flex>
-        )
-      }
-    ];
-
-    return (
-      <Card
-        className={styles.glassCard}
-        title={<Title level={4} style={{ margin: 0 }}>Управление автобусами</Title>}
-        extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsBusModalOpen(true)} disabled={!profile.carrierId}>
-            Добавить автобус
-          </Button>
-        }
-      >
-        <Table
-          dataSource={buses}
-          columns={columns}
-          rowKey="id"
-          loading={loading}
-          bordered
-          pagination={{ pageSize: 8 }}
-        />
-      </Card>
-    );
-  };
-
-  const renderRoutesTable = () => {
-    const columns = [
-      {
-        title: "Пункт Отправления",
-        key: "from",
-        render: (_: any, record: any) => (
-          <div>
-            <Text strong>{record.fromCityName ? `${record.fromCityName} (${record.fromStationName})` : (record.fromStationName || "ID: " + record.fromStationId)}</Text>
-          </div>
-        )
-      },
-      {
-        title: "Пункт Назначения",
-        key: "to",
-        render: (_: any, record: any) => (
-          <div>
-            <Text strong>{record.toCityName ? `${record.toCityName} (${record.toStationName})` : (record.toStationName || "ID: " + record.toStationId)}</Text>
-          </div>
-        )
-      },
-      {
-        title: "Дистанция",
-        dataIndex: "distanceKm",
-        key: "distanceKm",
-        render: (val: number) => <Tag color="blue" style={{ fontSize: 13, padding: "2px 8px" }}>{val} км</Tag>
-      },
-      {
-        title: "Действия",
-        key: "action",
-        width: 120,
-        render: (_: any, record: any) => (
-          <Flex gap={8}>
-            <Button
-              icon={<EditOutlined />}
-              onClick={() => startEditRoute(record)}
-              disabled={!profile.carrierId}
-              title="Редактировать"
-            />
-            <Button
-              danger
-              icon={<DeleteOutlined />}
-              onClick={() => handleDeleteRoute(record.id)}
-              disabled={!profile.carrierId}
-              title="Удалить"
-            />
-          </Flex>
-        )
-      }
-    ];
-
-    return (
-      <Card
-        className={styles.glassCard}
-        title={<Title level={4} style={{ margin: 0 }}>Направления / Маршруты</Title>}
-        extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsRouteModalOpen(true)} disabled={!profile.carrierId}>
-            Добавить маршрут
-          </Button>
-        }
-      >
-        <Table
-          dataSource={routes}
-          columns={columns}
-          rowKey="id"
-          loading={loading}
-          bordered
-          pagination={{ pageSize: 8 }}
-        />
-      </Card>
-    );
-  };
-
-  const renderTripsTable = () => {
-    const columns = [
-      {
-        title: "Маршрут",
-        key: "routeName",
-        render: (_: any, record: any) => {
-          return <Text strong>{record.routeName}</Text>;
-        }
-      },
-      {
-        title: "Автобус",
-        key: "busPlateNumber",
-        render: (_: any, record: any) => {
-          const bs = buses.find(b => b.id === record.busId);
-          return bs ? <Tag color="purple" style={{ fontSize: 13 }}>{bs.plateNumber}</Tag> : <Tag color="default">{record.busPlateNumber}</Tag>;
-        }
-      },
-      {
-        title: "Отправление",
-        dataIndex: "departureTime",
-        key: "departureTime",
-        render: (val: string) => dayjs(val).format("DD.MM.YYYY HH:mm")
-      },
-      {
-        title: "Прибытие",
-        dataIndex: "arrivalTime",
-        key: "arrivalTime",
-        render: (val: string) => dayjs(val).format("DD.MM.YYYY HH:mm")
-      },
-      {
-        title: "Свободные места",
-        key: "seatsStat",
-        render: (_: any, record: any) => (
-          <Tag color={record.freeSeats === 0 ? "error" : "success"} style={{ fontSize: 13 }}>
-            {record.freeSeats}
-          </Tag>
-        )
-      },
-      {
-        title: "Статус",
-        key: "status",
-        width: 80,
-        render: (_: any, record: any) => (
-          <Switch 
-            size="small"
-            checked={record.status === 1} 
-            onChange={() => handleToggleTripStatus(record.id)}
-            disabled={!profile.carrierId}
-          />
-        )
-      },
-      {
-        title: "Действия",
-        key: "action",
-        width: 160,
-        render: (_: any, record: any) => (
-          <Flex gap={8}>
-            {!isCashier && (
-              <Button
-                icon={<SettingOutlined />}
-                onClick={() => openSeatManagement(record)}
-                disabled={!profile.carrierId}
-                title="Настройка мест и цен"
-              />
-            )}
-            {!isCashier && (
-              <Button
-                icon={<EditOutlined />}
-                onClick={() => startEditTrip(record)}
-                disabled={!profile.carrierId}
-                title="Редактировать рейс"
-              />
-            )}
-            <Button
-              danger
-              icon={<DeleteOutlined />}
-              onClick={() => handleDeleteTrip(record.id)}
-              disabled={!profile.carrierId}
-              title="Удалить рейс"
-            />
-          </Flex>
-        )
-      }
-    ];
-
-    return (
-      <Card
-        className={styles.glassCard}
-        title={<Title level={4} style={{ margin: 0 }}>Планирование рейсов</Title>}
-        extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsTripModalOpen(true)} disabled={!profile.carrierId}>
-            Добавить рейс
-          </Button>
-        }
-      >
-        <Table
-          dataSource={trips}
-          columns={columns}
-          rowKey="id"
-          loading={loading}
-          bordered
-          pagination={{ pageSize: 8 }}
-        />
-      </Card>
-    );
-  };
 
   const openSalesBooking = (trip: any) => {
     setActiveSalesTrip(trip);
     setSelectedSeats([]);
     setIndividualPrice(null);
+    setActiveSalesTab("scheme");
     fetchTripSeats(trip.id);
   };
 
-  const renderSalesTable = () => {
-    const columns = [
-      {
-        title: "Маршрут",
-        key: "routeName",
-        render: (_: any, record: any) => {
-          const rt = routes.find(r => r.id === record.routeId);
-          const name = rt
-            ? `${rt.fromCityName ? rt.fromCityName + ' (' + rt.fromStationName + ')' : rt.fromStationName} → ${rt.toCityName ? rt.toCityName + ' (' + rt.toStationName + ')' : rt.toStationName}`
-            : record.routeName;
-          return <Text strong style={{ fontSize: 15 }}>{name}</Text>;
-        }
-      },
-      {
-        title: "Автобус",
-        key: "busPlateNumber",
-        render: (_: any, record: any) => {
-          const bs = buses.find(b => b.id === record.busId);
-          return bs ? <Tag color="purple" style={{ fontSize: 13 }}>{bs.plateNumber}</Tag> : <Tag color="default">{record.busPlateNumber}</Tag>;
-        }
-      },
-      {
-        title: "Отправление",
-        dataIndex: "departureTime",
-        key: "departureTime",
-        render: (val: string) => dayjs(val).format("DD.MM.YYYY HH:mm")
-      },
-      {
-        title: "Прибытие",
-        dataIndex: "arrivalTime",
-        key: "arrivalTime",
-        render: (val: string) => dayjs(val).format("DD.MM.YYYY HH:mm")
-      },
-      {
-        title: "Свободные места",
-        key: "seatsStat",
-        render: (_: any, record: any) => (
-          <Tag color={record.freeSeats === 0 ? "error" : "success"} style={{ fontSize: 13 }}>
-            {record.freeSeats} из {record.totalSeats} свободно
-          </Tag>
-        )
-      },
-      {
-        title: "Цена билета",
-        dataIndex: "price",
-        key: "price",
-        render: (val: number) => <Text strong style={{ color: "#2563eb", fontSize: 15 }}>{val} KZT</Text>
-      },
-      {
-        title: "Действия",
-        key: "action",
-        width: 220,
-        render: (_: any, record: any) => (
-          <Button icon={<ShoppingCartOutlined />} type="primary" onClick={() => openSalesBooking(record)} disabled={!profile.carrierId}>
-            Оформить продажи
-          </Button>
-        )
-      }
-    ];
-
-    return (
-      <Card
-        className={styles.glassCard}
-        title={<Title level={4} style={{ margin: 0 }}>Касса — Оформление билетов и продажи</Title>}
-      >
-        <Table
-          dataSource={trips}
-          columns={columns}
-          rowKey="id"
-          loading={loading}
-          bordered
-          pagination={{ pageSize: 8 }}
-        />
-      </Card>
-    );
+  const openSalesPassengers = (trip: any) => {
+    setActiveSalesTrip(trip);
+    setSelectedSeats([]);
+    setIndividualPrice(null);
+    setActiveSalesTab("passengers");
+    fetchTripSeats(trip.id);
   };
 
-  const renderSalesActiveBooking = () => {
-    if (!activeSalesTrip) return null;
 
-    return (
-      <Card
-        className={styles.glassCard}
-        title={
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", flexWrap: "wrap", gap: 12 }}>
-            <div>
-              <Title level={4} style={{ margin: 0 }}>Касса — Продажа билетов</Title>
-              <Text type="secondary" style={{ fontSize: 13 }}>
-                Рейс: {activeSalesTrip.routeName || "Маршрут"} | Отправление: {dayjs(activeSalesTrip.departureTime).format("DD.MM.YYYY HH:mm")}
-              </Text>
-            </div>
-            <Button onClick={() => { setActiveSalesTrip(null); setSelectedSeats([]); }}>
-              Назад к списку рейсов
-            </Button>
-          </div>
-        }
-      >
-        {seatsLoading ? (
-          <div style={{ display: "flex", justifyContent: "center", padding: 80 }}>
-            <Spin size="large" tip="Загрузка схемы мест..." />
-          </div>
-        ) : (
-          <Flex vertical gap={16} style={{ width: "100%" }}>
-            <Segmented
-              options={[
-                { label: "Схема мест (Продажа)", value: "scheme" },
-                { label: `Список пассажиров (${seatsData.filter(s => s.status === 'Booked' || s.status === 'Reserved').length} мест)`, value: "passengers" }
-              ]}
-              value={activeSalesTab}
-              onChange={(val) => {
-                setActiveSalesTab(val as string);
-                setSelectedSeats([]);
-              }}
-              style={{ marginBottom: 16 }}
-              size="large"
-              block
-            />
-
-            {activeSalesTab === "scheme" ? (
-              <div className={styles.seatModalContainer}>
-                {/* Left: Custom Bus scheme representation */}
-                <div className={styles.busLayoutContainer}>
-                  <div className={styles.schemeContainer}>
-                    <div className={styles.seatRow}>
-                      {[...LAYOUT_COLUMNS].reverse().map((col, colIndex) => (
-                        <div key={colIndex} className={styles.seatsGrid}>
-                          {col.map((cell, rowIndex) => {
-                            if (cell === null) {
-                              return <div key={`empty-${colIndex}-${rowIndex}`} className={styles.emptySpace} />;
-                            }
-                            if (cell === "driver") {
-                              return (
-                                <div key={`driver-${colIndex}-${rowIndex}`} className={styles.driverCell}>
-                                  <div className={styles.wheel}></div>
-                                </div>
-                              );
-                            }
-                            if (cell === "door") {
-                              return <div key={`door-${colIndex}-${rowIndex}`} className={styles.facility}>ВХОД</div>;
-                            }
-
-                            const seatNum = cell as number;
-                            const { status, price } = getSeatState(seatNum);
-
-                            return (
-                              <div
-                                key={seatNum}
-                                className={`${styles.customSeat} ${styles[status]}`}
-                                onClick={() => handleSeatClick(seatNum)}
-                              >
-                                <span className={styles.seatNum}>{seatNum}</span>
-                                {price > 0 && <span className={styles.seatPrice}>{price} ₸</span>}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right: Side operations pane */}
-                <div className={styles.sidePanel}>
-                  {/* Legend */}
-                  <div>
-                    <Text strong style={{ display: "block", marginBottom: 10 }}>Обозначения мест</Text>
-                    <Flex vertical gap={6}>
-                      <Flex align="center" gap={8}>
-                        <div className={`${styles.legendBox} ${styles.free}`}></div>
-                        <Text>Свободно</Text>
-                      </Flex>
-                      <Flex align="center" gap={8}>
-                        <div className={`${styles.legendBox} ${styles.reserved}`}></div>
-                        <Text>Бронь (сессия)</Text>
-                      </Flex>
-                      <Flex align="center" gap={8}>
-                        <div className={`${styles.legendBox} ${styles.booked}`}></div>
-                        <Text>Продано / Занято</Text>
-                      </Flex>
-                      <Flex align="center" gap={8}>
-                        <div className={`${styles.legendBox} ${styles.selected}`}></div>
-                        <Text>Выбрано вами</Text>
-                      </Flex>
-                    </Flex>
-                  </div>
-
-                  <hr style={{ border: "0.5px solid #e2e8f0", margin: "4px 0" }} />
-
-                  {/* Dynamic details / Actions form */}
-                  {selectedSeats.length === 0 ? (
-                    <div style={{ textAlign: "center", padding: "20px 0" }}>
-                      <Text type="secondary">Выберите свободные места на схеме автобуса для оформления оффлайн-продажи.</Text>
-                    </div>
-                  ) : (() => {
-                    const firstSeatNum = selectedSeats[0];
-                    const seatInfo = seatsData.find(s => s.seatNumber === String(firstSeatNum));
-                    const isBooked = seatInfo && seatInfo.status === "Booked";
-                    const isReserved = seatInfo && seatInfo.status === "Reserved";
-
-                    if (isBooked || isReserved) {
-                      const passenger = seatInfo?.passenger;
-                      const isManualSale = passenger && passenger.buyerEmail === "manual@beket.kz";
-
-                      return (
-                        <div>
-                          <Title level={5} style={{ marginBottom: 12 }}>
-                            Место {firstSeatNum} ({isBooked ? "Продано" : "Зарезервировано"})
-                          </Title>
-                          
-                          <Card size="small" title="Информация о пассажире" style={{ background: "#fff", marginBottom: 16 }}>
-                            {passenger ? (
-                              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                                <div><Text type="secondary">ФИО:</Text> <strong>{passenger.lastName} {passenger.firstName} {passenger.middleName || ""}</strong></div>
-                                <div><Text type="secondary">Документ:</Text> {passenger.documentType === "passport" ? "Удостоверение" : passenger.documentType === "foreign_passport" ? "Паспорт" : passenger.documentType || "—"} №{passenger.documentNumber || "—"}</div>
-                                {passenger.iin && <div><Text type="secondary">ИИН:</Text> {passenger.iin}</div>}
-                                <div><Text type="secondary">Билет:</Text> <Tag color="blue">{passenger.ticketNumber || "—"}</Tag></div>
-                                <div><Text type="secondary">Телефон:</Text> {passenger.buyerPhone || "—"}</div>
-                                <div><Text type="secondary">Email:</Text> {passenger.buyerEmail || "—"}</div>
-                              </div>
-                            ) : (
-                              <Text type="secondary">Детали пассажира недоступны (онлайн покупка).</Text>
-                            )}
-                          </Card>
-
-                          {isManualSale && (
-                            <Button 
-                              type="primary" 
-                              danger 
-                              block 
-                              loading={cancelLoading} 
-                              onClick={() => handleCancelManualBooking(String(firstSeatNum))}
-                            >
-                              Отменить продажу
-                            </Button>
-                          )}
-                        </div>
-                      );
-                    }
-
-                    // If not booked/reserved (i.e. free seats are selected):
-                    return (
-                      <div>
-                        <Title level={5}>Выбрано мест: {selectedSeats.length}</Title>
-                        <Text style={{ display: "block", marginBottom: 6 }}>Номера: {selectedSeats.join(", ")}</Text>
-                        <Text strong style={{ display: "block", marginBottom: 12, fontSize: 15, color: "#2563eb" }}>
-                          Итого к оплате: {selectedSeats.reduce((acc, num) => acc + (getSeatState(num).price || 0), 0)} KZT
-                        </Text>
-
-                        {/* Manual sale form */}
-                        <Card size="small" title="Пассажирские данные" style={{ background: "#fff" }}>
-                          <Form form={passengerForm} layout="vertical" onFinish={handleManualBooking}>
-                            <Form.Item name="lastName" label="Фамилия" rules={[{ required: true, message: "Введите фамилию" }]}>
-                              <Input placeholder="Иванов" size="small" />
-                            </Form.Item>
-                            <Form.Item name="firstName" label="Имя" rules={[{ required: true, message: "Введите имя" }]}>
-                              <Input placeholder="Иван" size="small" />
-                            </Form.Item>
-                            <Form.Item name="middleName" label="Отчество">
-                              <Input placeholder="Иванович" size="small" />
-                            </Form.Item>
-                            <Form.Item name="documentType" label="Тип документа" initialValue="passport">
-                              <Select size="small">
-                                <Select.Option value="passport">Удостоверение</Select.Option>
-                                <Select.Option value="foreign_passport">Паспорт</Select.Option>
-                              </Select>
-                            </Form.Item>
-                            <Form.Item name="documentNumber" label="Номер документа" rules={[{ required: true, message: "Введите номер документа" }]}>
-                              <Input placeholder="012345678" size="small" />
-                            </Form.Item>
-                            <Form.Item name="iin" label="ИИН (12 цифр)">
-                              <Input placeholder="123456789012" maxLength={12} size="small" />
-                            </Form.Item>
-                            <Button type="primary" htmlType="submit" danger block loading={manualBookingLoading} icon={<CheckOutlined />}>
-                              Оформить продажу
-                            </Button>
-                          </Form>
-                        </Card>
-                      </div>
-                    );
-                  })()}
-                </div>
-              </div>
-            ) : (
-              renderPassengersListTable()
-            )}
-          </Flex>
-        )}
-      </Card>
-    );
-  };
-
-  const renderEmployeesTable = () => {
-    const columns = [
-      {
-        title: "Имя",
-        dataIndex: "firstName",
-        key: "firstName",
-        render: (text: string) => <Text strong>{text}</Text>
-      },
-      {
-        title: "Фамилия",
-        dataIndex: "lastName",
-        key: "lastName",
-        render: (text: string) => <Text strong>{text}</Text>
-      },
-      {
-        title: "Номер телефона (Логин)",
-        dataIndex: "phoneNumber",
-        key: "phoneNumber"
-      },
-      {
-        title: "Email",
-        dataIndex: "email",
-        key: "email",
-        render: (text: string) => text || <Text type="secondary">—</Text>
-      },
-      {
-        title: "Роли",
-        dataIndex: "roles",
-        key: "roles",
-        render: (roles: string[]) => (
-          <Flex gap={4}>
-            {roles.map(r => (
-              <Tag key={r} color={r === "Admin" ? "blue" : "green"}>{r}</Tag>
-            ))}
-          </Flex>
-        )
-      },
-      {
-        title: "Статус",
-        key: "isActive",
-        width: 80,
-        render: (_: any, record: any) => (
-          <Switch 
-            size="small"
-            checked={record.isActive} 
-            onChange={() => handleToggleEmployeeActive(record.id)}
-          />
-        )
-      },
-      {
-        title: "Дата создания",
-        dataIndex: "createdOn",
-        key: "createdOn",
-        render: (val: string) => val ? dayjs(val).format("DD.MM.YYYY HH:mm") : "—"
-      },
-      {
-        title: "Действия",
-        key: "action",
-        width: 120,
-        render: (_: any, record: any) => (
-          <Flex gap={8}>
-            <Button
-              icon={<EditOutlined />}
-              onClick={() => startEditEmployee(record)}
-              title="Редактировать агента"
-            />
-            <Button
-              danger
-              icon={<DeleteOutlined />}
-              onClick={() => handleDeleteEmployee(record.id)}
-              title="Удалить агента"
-            />
-          </Flex>
-        )
-      }
-    ];
-
-    return (
-      <Card
-        className={styles.glassCard}
-        title={<Title level={4} style={{ margin: 0 }}>Управление агентами автопарка</Title>}
-        extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsEmployeeModalOpen(true)}>
-            Добавить агента
-          </Button>
-        }
-      >
-        <Table
-          dataSource={employees}
-          columns={columns}
-          rowKey="id"
-          loading={employeesLoading}
-          bordered
-          pagination={{ pageSize: 8 }}
-        />
-      </Card>
-    );
-  };
-
-  const renderOverview = () => {
-    return (
-      <Row gutter={[20, 20]}>
-        <Col xs={24} sm={8}>
-          <Card className={`${styles.glassCard} ${styles.hoverEffect}`} onClick={() => handleMenuClick("fleet")}>
-            <Statistic
-              title="Автобусов в парке"
-              value={buses.length}
-              prefix={<CarOutlined style={{ color: "#3b82f6" }} />}
-              valueStyle={{ color: "#3b82f6", fontWeight: "700" }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={8}>
-          <Card className={`${styles.glassCard} ${styles.hoverEffect}`} onClick={() => handleMenuClick("routes")}>
-            <Statistic
-              title="Направлений маршрутов"
-              value={routes.length}
-              prefix={<CompassOutlined style={{ color: "#10b981" }} />}
-              valueStyle={{ color: "#10b981", fontWeight: "700" }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={8}>
-          <Card className={`${styles.glassCard} ${styles.hoverEffect}`} onClick={() => handleMenuClick("trips")}>
-            <Statistic
-              title="Рейсов в расписании"
-              value={trips.length}
-              prefix={<CalendarOutlined style={{ color: "#8b5cf6" }} />}
-              valueStyle={{ color: "#8b5cf6", fontWeight: "700" }}
-            />
-          </Card>
-        </Col>
-
-        {/* Useful Carrier details card */}
-        <Col span={24}>
-          <Card className={styles.glassCard} title="Информация об организации">
-            <Row gutter={[16, 16]}>
-              <Col xs={24} md={12}>
-                <div style={{ marginBottom: 12 }}>
-                  <Text type="secondary" style={{ fontSize: 13, display: "block" }}>Наименование автопарка</Text>
-                  <Text strong style={{ fontSize: 16, color: "#1e293b" }}>{profile.carrierName || "Не привязан"}</Text>
-                </div>
-                <div style={{ marginBottom: 12 }}>
-                  <Text type="secondary" style={{ fontSize: 13, display: "block" }}>Администратор</Text>
-                  <Text strong style={{ fontSize: 15, color: "#1e293b" }}>{profile.fullName || "—"}</Text>
-                </div>
-              </Col>
-              <Col xs={24} md={12}>
-                <div style={{ marginBottom: 12 }}>
-                  <Text type="secondary" style={{ fontSize: 13, display: "block" }}>Контактный Email</Text>
-                  <Text strong style={{ fontSize: 15, color: "#1e293b" }}>{profile.email || "—"}</Text>
-                </div>
-                <div>
-                  <Text type="secondary" style={{ fontSize: 13, display: "block" }}>Статус верификации</Text>
-                  <Tag color={profile.carrierName ? "success" : "error"} style={{ marginTop: 4 }}>
-                    {profile.carrierName ? "Подтвержденная компания" : "Автопарк не настроен"}
-                  </Tag>
-                </div>
-              </Col>
-            </Row>
-          </Card>
-        </Col>
-
-        <Col span={24}>
-          <Card className={styles.glassCard} title="Добро пожаловать в Кабинет перевозчика">
-            <Typography.Paragraph style={{ fontSize: 15 }}>
-              Здесь вы можете полноценно управлять автобусным парком вашего предприятия, создавать регулярные маршруты следования, а также планировать расписание поездок.
-            </Typography.Paragraph>
-            <Typography.Paragraph style={{ fontSize: 15 }}>
-              Используйте меню слева для переключения разделов. На вкладке <strong>Рейсы</strong> вы можете управлять свободными местами: переопределять цены для каждого места отдельно и продавать билеты оффлайн пассажирам, обратившимся к вам напрямую.
-            </Typography.Paragraph>
-          </Card>
-        </Col>
-      </Row>
-    );
-  };
 
   // Build Model list selector helper
   const handleBrandChange = (brandId: string) => {
@@ -1590,8 +749,9 @@ function CarrierDashboardPage() {
       case "fleet": return "Мой автопарк";
       case "routes": return "Маршруты и Направления";
       case "trips": return "Расписание и Рейсы";
-      case "sales": return "Касса";
+      case "sales": return "Продажа билетов";
       case "employees": return "Агенты";
+      case "stats": return "Статистика продаж";
       default: return "Главная";
     }
   };
@@ -1650,13 +810,22 @@ function CarrierDashboardPage() {
             </>
           )}
 
-          {/* Cashier view tab (visible to both admin and cashier) */}
+          {/* Sales / Cashier tab */}
           <div
             className={`${styles.menuItem} ${activeKey === "sales" ? styles.active : ""}`}
             onClick={() => handleMenuClick("sales")}
           >
             <ShoppingCartOutlined />
-            <span>Касса / Продажи</span>
+            <span>Продажа билетов</span>
+          </div>
+
+          {/* Stats tab */}
+          <div
+            className={`${styles.menuItem} ${activeKey === "stats" ? styles.active : ""}`}
+            onClick={() => handleMenuClick("stats")}
+          >
+            <BarChartOutlined />
+            <span>Статистика продаж</span>
           </div>
 
           <div className={styles.logoutBtn} onClick={handleLogout}>
@@ -1705,14 +874,92 @@ function CarrierDashboardPage() {
           </div>
         )}
 
-        {activeKey === "overview" && renderOverview()}
-        {activeKey === "fleet" && renderBusesTable()}
-        {activeKey === "routes" && renderRoutesTable()}
-        {activeKey === "trips" && renderTripsTable()}
-        {activeKey === "sales" && (
-          activeSalesTrip ? renderSalesActiveBooking() : renderSalesTable()
+        {activeKey === "overview" && (
+          <OverviewSection
+            busesCount={buses.length}
+            routesCount={routes.length}
+            tripsCount={trips.length}
+            profile={profile}
+            onNavigateTab={handleMenuClick}
+          />
         )}
-        {activeKey === "employees" && renderEmployeesTable()}
+        {activeKey === "fleet" && (
+          <FleetSection
+            buses={buses}
+            loading={loading}
+            profileCarrierId={profile.carrierId}
+            onStartEdit={startEditBus}
+            onDelete={handleDeleteBus}
+            onOpenAddModal={() => setIsBusModalOpen(true)}
+          />
+        )}
+        {activeKey === "routes" && (
+          <RoutesSection
+            routes={routes}
+            loading={loading}
+            profileCarrierId={profile.carrierId}
+            onStartEdit={startEditRoute}
+            onDelete={handleDeleteRoute}
+            onOpenAddModal={() => setIsRouteModalOpen(true)}
+          />
+        )}
+        {activeKey === "trips" && (
+          <TripsSection
+            trips={trips}
+            buses={buses}
+            isCashier={isCashier}
+            loading={loading}
+            profileCarrierId={profile.carrierId}
+            onToggleTripStatus={handleToggleTripStatus}
+            onOpenSeatManagement={openSeatManagement}
+            onStartEdit={startEditTrip}
+            onDelete={handleDeleteTrip}
+            onOpenAddModal={() => setIsTripModalOpen(true)}
+          />
+        )}
+        {activeKey === "sales" && (
+          <SalesSection
+            trips={trips}
+            buses={buses}
+            loading={loading}
+            profile={profile}
+            activeSalesTrip={activeSalesTrip}
+            setActiveSalesTrip={setActiveSalesTrip}
+            activeSalesTab={activeSalesTab}
+            setActiveSalesTab={setActiveSalesTab}
+            seatsLoading={seatsLoading}
+            seatsData={seatsData}
+            selectedSeats={selectedSeats}
+            setSelectedSeats={setSelectedSeats}
+            passengerForm={passengerForm}
+            manualBookingLoading={manualBookingLoading}
+            cancelLoading={cancelLoading}
+            openSalesBooking={openSalesBooking}
+            openSalesPassengers={openSalesPassengers}
+            handleSeatClick={handleSeatClick}
+            handleManualBooking={handleManualBooking}
+            handleCancelManualBooking={handleCancelManualBooking}
+            startEditPassengerDetails={startEditPassengerDetails}
+          />
+        )}
+        {activeKey === "employees" && (
+          <EmployeesSection
+            employees={employees}
+            employeesLoading={employeesLoading}
+            onToggleActive={handleToggleEmployeeActive}
+            onStartEdit={startEditEmployee}
+            onDelete={handleDeleteEmployee}
+            onOpenAddModal={() => setIsEmployeeModalOpen(true)}
+          />
+        )}
+        {activeKey === "stats" && (
+          <SalesStatsSection
+            trips={trips}
+            buses={buses}
+            loading={loading}
+            profile={profile}
+          />
+        )}
       </div>
 
       {/* 1. Modal: Add Bus */}
@@ -1910,117 +1157,19 @@ function CarrierDashboardPage() {
       </Modal>
 
       {/* 4. Modal: Seat & Price Management on Trip */}
-      <Modal
-        title={
-          selectedTrip ? (
-            <div style={{ paddingBottom: 10 }}>
-              <Title level={4} style={{ margin: 0 }}>Управление ценами на рейсе</Title>
-              <Text type="secondary" style={{ fontSize: 13 }}>
-                Рейс: {selectedTrip.routeName || "Маршрут"} | Отправление: {dayjs(selectedTrip.departureTime).format("DD.MM.YYYY HH:mm")}
-              </Text>
-            </div>
-          ) : ""
-        }
-        open={isSeatModalOpen}
+      <SeatManagementModal
+        isOpen={isSeatModalOpen}
         onCancel={() => setIsSeatModalOpen(false)}
-        footer={null}
-        width={1100}
-        destroyOnClose
-      >
-        {seatsLoading ? (
-          <div style={{ display: "flex", justifyContent: "center", padding: 80 }}>
-            <Spin size="large" tip="Загрузка схемы мест..." />
-          </div>
-        ) : (
-          <div className={styles.seatModalContainer}>
-            {/* Left: Custom Bus scheme representation */}
-            <div className={styles.busLayoutContainer}>
-              <div className={styles.schemeContainer}>
-                <div className={styles.seatRow}>
-                  {[...LAYOUT_COLUMNS].reverse().map((col, colIndex) => (
-                    <div key={colIndex} className={styles.seatsGrid}>
-                      {col.map((cell, rowIndex) => {
-                        if (cell === null) {
-                          return <div key={`empty-${colIndex}-${rowIndex}`} className={styles.emptySpace} />;
-                        }
-                        if (cell === "driver") {
-                          return (
-                            <div key={`driver-${colIndex}-${rowIndex}`} className={styles.driverCell}>
-                              <div className={styles.wheel}></div>
-                            </div>
-                          );
-                        }
-                        if (cell === "door") {
-                          return <div key={`door-${colIndex}-${rowIndex}`} className={styles.facility}>ВХОД</div>;
-                        }
-
-                        const seatNum = cell as number;
-                        const { status, price } = getSeatState(seatNum);
-
-                        return (
-                          <div
-                            key={seatNum}
-                            className={`${styles.customSeat} ${styles[status]}`}
-                            onClick={() => handleSeatClick(seatNum)}
-                          >
-                            <span className={styles.seatNum}>{seatNum}</span>
-                            {price > 0 && <span className={styles.seatPrice}>{price} ₸</span>}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Right: Side operations pane */}
-            <div className={styles.sidePanel}>
-              <div>
-                <Title level={5} style={{ marginTop: 0 }}>Управление ценами</Title>
-                <Text type="secondary" style={{ fontSize: 13 }}>
-                  Выберите свободные места на схеме для изменения стоимости.
-                </Text>
-              </div>
-
-              <hr style={{ border: "0.5px solid #e2e8f0", margin: "8px 0" }} />
-
-              {selectedSeats.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "20px 0" }}>
-                  <Text type="secondary">Выберите одно или несколько мест на схеме для установки тарифа.</Text>
-                </div>
-              ) : (
-                <div>
-                  <Title level={5}>Выбрано мест: {selectedSeats.length}</Title>
-                  <Text style={{ display: "block", marginBottom: 12 }}>Номера: {selectedSeats.join(", ")}</Text>
-
-                  <Card size="small" title="Изменение цен" style={{ background: "#fff" }}>
-                    <Form layout="vertical">
-                      <Form.Item label="Установить цену (KZT)">
-                        <InputNumber
-                          style={{ width: "100%" }}
-                          value={individualPrice}
-                          onChange={setIndividualPrice}
-                          min={0}
-                        />
-                      </Form.Item>
-                      <Button
-                        type="primary"
-                        block
-                        onClick={handleUpdatePrices}
-                        loading={priceSubmitting}
-                        disabled={individualPrice === null}
-                      >
-                        Применить цены
-                      </Button>
-                    </Form>
-                  </Card>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </Modal>
+        selectedTrip={selectedTrip}
+        seatsLoading={seatsLoading}
+        seatsData={seatsData}
+        selectedSeats={selectedSeats}
+        onSeatClick={handleSeatClick}
+        individualPrice={individualPrice}
+        setIndividualPrice={setIndividualPrice}
+        handleUpdatePrices={handleUpdatePrices}
+        priceSubmitting={priceSubmitting}
+      />
 
       {/* 5. Modal: Add Employee */}
       <Modal

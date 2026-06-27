@@ -186,8 +186,8 @@
   flex-direction: row;
   align-items: center;
   border: 4px solid #475569;
-  border-radius: 24px 70px 70px 24px;
-  padding: 16px 20px;
+  border-radius: 16px 50px 50px 16px;
+  padding: 12px 14px;
   background: #f1f5f9;
   min-width: max-content;
   box-shadow: inset 0 4px 15px rgba(0,0,0,0.05);
@@ -196,43 +196,43 @@
 .seatsGrid {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
 }
 
 .seatRow {
   display: flex;
   flex-direction: row;
-  gap: 14px;
+  gap: 8px;
 }
 
 .emptySpace {
-  width: 48px;
-  height: 48px;
+  width: 36px;
+  height: 36px;
 }
 
 .facility {
-  width: 48px;
-  height: 48px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: #cbd5e1;
   border-radius: 6px;
-  font-size: 10px;
+  font-size: 8px;
   font-weight: 700;
   color: #475569;
 }
 
 .driverCell {
-  width: 48px;
-  height: 48px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
 
   .wheel {
-    width: 32px;
-    height: 32px;
+    width: 24px;
+    height: 24px;
     border: 3px solid #475569;
     border-radius: 50%;
     position: relative;
@@ -252,8 +252,8 @@
 
 // Interactive custom Seat mapping styling
 .customSeat {
-  width: 48px;
-  height: 48px;
+  width: 36px;
+  height: 36px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -266,17 +266,17 @@
   padding: 2px;
 
   .seatNum {
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 800;
     line-height: 1.1;
   }
 
   .seatPrice {
-    font-size: 9px;
+    font-size: 7.5px;
     font-weight: 500;
     opacity: 0.9;
     line-height: 1.1;
-    margin-top: 2px;
+    margin-top: 1px;
   }
 
   &.free {
