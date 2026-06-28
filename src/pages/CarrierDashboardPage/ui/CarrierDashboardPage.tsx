@@ -173,6 +173,9 @@ function CarrierDashboardPage() {
   const [manualBookingLoading, setManualBookingLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
 
+  const localRoles: string[] = JSON.parse(localStorage.getItem("carrier_roles") || "[]");
+  const isCarrierRoleOnly = localRoles.includes("Carrier") && !localRoles.includes("Admin");
+
   // Fetching data
   const fetchBuses = async () => {
     try {
@@ -237,6 +240,24 @@ function CarrierDashboardPage() {
     }
   };
 
+  const [carrierCompanies, setCarrierCompanies] = useState<any[]>([]);
+
+  const fetchCarrierCompanies = async () => {
+    try {
+      const res = await authApi.get("/api/v1/carrier/employees/carriers");
+      setCarrierCompanies(res.data || []);
+    } catch (e) {
+      console.error("Error loading carrier companies:", e);
+    }
+  };
+
+  const openAddEmployeeModal = () => {
+    employeeForm.resetFields();
+    employeeForm.setFieldValue("carrierId", profile.carrierId);
+    setEditingEmployee(null);
+    setIsEmployeeModalOpen(true);
+  };
+
   const startEditEmployee = (emp: any) => {
     setEditingEmployee(emp);
     employeeForm.setFieldsValue({
@@ -244,6 +265,8 @@ function CarrierDashboardPage() {
       firstName: emp.firstName,
       lastName: emp.lastName,
       email: emp.email,
+      role: emp.roles?.[0] || "Agent",
+      carrierId: emp.carrierId || null,
       password: "" // Blank by default
     });
     setIsEmployeeModalOpen(true);
@@ -257,15 +280,17 @@ function CarrierDashboardPage() {
         firstName: values.firstName,
         lastName: values.lastName,
         email: values.email,
+        role: values.role || "Agent",
+        carrierId: values.carrierId || null,
         password: values.password || null
       };
 
       if (editingEmployee) {
         await authApi.put(`/api/v1/carrier/employees/${editingEmployee.id}`, payload);
-        message.success("Данные агента успешно обновлены!");
+        message.success("Данные сотрудника успешно обновлены!");
       } else {
         await authApi.post("/api/v1/carrier/employees", payload);
-        message.success("Агент успешно добавлен!");
+        message.success("Сотрудник успешно добавлен!");
       }
       setIsEmployeeModalOpen(false);
       setEditingEmployee(null);
@@ -273,7 +298,19 @@ function CarrierDashboardPage() {
       fetchEmployees();
     } catch (err: any) {
       console.error(err);
-      message.error(err.response?.data || "Ошибка при сохранении агента");
+      let errorMsg = "Ошибка при сохранении сотрудника";
+      if (err.response?.data) {
+        if (typeof err.response.data === "string") {
+          errorMsg = err.response.data;
+        } else if (Array.isArray(err.response.data)) {
+          errorMsg = err.response.data.map((e: any) => e.description || e.Description).join(", ");
+        } else if (err.response.data.errors) {
+          errorMsg = Object.values(err.response.data.errors).flat().join(", ");
+        } else if (err.response.data.message) {
+          errorMsg = err.response.data.message;
+        }
+      }
+      message.error(errorMsg);
     } finally {
       setEmployeeSubmitting(false);
     }
@@ -358,6 +395,7 @@ function CarrierDashboardPage() {
     fetchTrips();
     if (!userIsCashier) {
       fetchEmployees();
+      fetchCarrierCompanies();
     }
   }, [navigate, location.pathname]);
 
@@ -750,7 +788,7 @@ function CarrierDashboardPage() {
       case "routes": return "Маршруты и Направления";
       case "trips": return "Расписание и Рейсы";
       case "sales": return "Продажа билетов";
-      case "employees": return "Агенты";
+      case "employees": return "Сотрудники";
       case "stats": return "Статистика продаж";
       default: return "Главная";
     }
@@ -776,13 +814,15 @@ function CarrierDashboardPage() {
                 <span>Главная</span>
               </div>
 
-              <div
-                className={`${styles.menuItem} ${activeKey === "fleet" ? styles.active : ""}`}
-                onClick={() => handleMenuClick("fleet")}
-              >
-                <CarOutlined />
-                <span>Мой автопарк</span>
-              </div>
+              {!profile.roles?.includes("Admin") && (
+                <div
+                  className={`${styles.menuItem} ${activeKey === "fleet" ? styles.active : ""}`}
+                  onClick={() => handleMenuClick("fleet")}
+                >
+                  <CarOutlined />
+                  <span>Мой автопарк</span>
+                </div>
+              )}
 
               <div
                 className={`${styles.menuItem} ${activeKey === "routes" ? styles.active : ""}`}
@@ -805,7 +845,7 @@ function CarrierDashboardPage() {
                 onClick={() => handleMenuClick("employees")}
               >
                 <TeamOutlined />
-                <span>Агенты</span>
+                <span>Сотрудники</span>
               </div>
             </>
           )}
@@ -859,7 +899,7 @@ function CarrierDashboardPage() {
           </Flex>
         </div>
 
-        {!profile.carrierId && (
+        {!profile.carrierId && !profile.roles?.includes("Admin") && (
           <div style={{ padding: "0 24px", marginBottom: 16 }}>
             <div style={{
               background: "rgba(239, 68, 68, 0.15)",
@@ -949,7 +989,7 @@ function CarrierDashboardPage() {
             onToggleActive={handleToggleEmployeeActive}
             onStartEdit={startEditEmployee}
             onDelete={handleDeleteEmployee}
-            onOpenAddModal={() => setIsEmployeeModalOpen(true)}
+            onOpenAddModal={openAddEmployeeModal}
           />
         )}
         {activeKey === "stats" && (
@@ -1173,7 +1213,7 @@ function CarrierDashboardPage() {
 
       {/* 5. Modal: Add Employee */}
       <Modal
-        title={editingEmployee ? "Редактировать агента" : "Добавить агента"}
+        title={editingEmployee ? "Редактировать сотрудника" : "Добавить сотрудника"}
         open={isEmployeeModalOpen}
         onCancel={() => {
           setIsEmployeeModalOpen(false);
@@ -1227,6 +1267,44 @@ function CarrierDashboardPage() {
             rules={[{ type: "email", message: "Некорректный формат email" }]}
           >
             <Input placeholder="agent@example.com" />
+          </Form.Item>
+
+          <Form.Item
+            name="role"
+            label="Роль сотрудника"
+            initialValue="Agent"
+            rules={[{ required: true, message: "Выберите роль" }]}
+          >
+            <Select disabled={isCarrierRoleOnly}>
+              <Select.Option value="Agent">Агент</Select.Option>
+              <Select.Option value="Admin">Администратор</Select.Option>
+              <Select.Option value="Carrier">Перевозчик</Select.Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            name="carrierId"
+            label="Компания / Автопарк"
+            dependencies={["role"]}
+            rules={[
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  const role = getFieldValue("role");
+                  if ((role === "Agent" || role === "Carrier") && !value) {
+                    return Promise.reject(new Error("Выберите компанию"));
+                  }
+                  return Promise.resolve();
+                },
+              }),
+            ]}
+          >
+            <Select placeholder="Выберите автопарк" allowClear disabled={isCarrierRoleOnly}>
+              {carrierCompanies.map(c => (
+                <Select.Option key={c.id || c.Id} value={c.id || c.Id}>
+                  {c.name || c.Name}
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
         </Form>
       </Modal>
