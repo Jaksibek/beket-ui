@@ -23,7 +23,9 @@ import {
   UserOutlined,
   ShoppingCartOutlined,
   TeamOutlined,
-  BarChartOutlined
+  BarChartOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined
 } from "@ant-design/icons";
 import { authApi } from "@/shared/api";
 import { appRoutes } from "@/shared/config/router";
@@ -167,6 +169,7 @@ function CarrierDashboardPage() {
   // Price overrides state
   const [individualPrice, setIndividualPrice] = useState<number | null>(null);
   const [priceSubmitting, setPriceSubmitting] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   // Manual booking state
   const [passengerForm] = Form.useForm();
@@ -174,22 +177,31 @@ function CarrierDashboardPage() {
   const [cancelLoading, setCancelLoading] = useState(false);
 
   const localRoles: string[] = JSON.parse(localStorage.getItem("carrier_roles") || "[]");
+  const isAdmin = localRoles.some((r: string) => r.toLowerCase() === "admin") || profile?.roles?.some((r: string) => r.toLowerCase() === "admin");
   const isCarrierRoleOnly = localRoles.includes("Carrier") && !localRoles.includes("Admin");
 
   // Fetching data
-  const fetchBuses = async () => {
+  const fetchBuses = async (searchParams?: { search?: string; carrierName?: string; city?: string }) => {
     try {
-      const res = await authApi.get("/api/v1/carrier/buses");
+      const params = new URLSearchParams();
+      if (searchParams?.search) params.append("search", searchParams.search);
+      if (searchParams?.carrierName) params.append("carrierName", searchParams.carrierName);
+      if (searchParams?.city) params.append("city", searchParams.city);
+
+      const res = await authApi.get(`/api/v1/carrier/buses?${params.toString()}`);
       setBuses(res.data);
     } catch (e) {
       console.error(e);
       handleRequestError(e);
     }
   };
-
-  const fetchRoutes = async () => {
+  const fetchRoutes = async (searchParams?: { search?: string; carrierName?: string }) => {
     try {
-      const res = await authApi.get("/api/v1/carrier/routes");
+      const params = new URLSearchParams();
+      if (searchParams?.search) params.append("search", searchParams.search);
+      if (searchParams?.carrierName) params.append("carrierName", searchParams.carrierName);
+
+      const res = await authApi.get(`/api/v1/carrier/routes?${params.toString()}`);
       setRoutes(res.data);
     } catch (e) {
       console.error(e);
@@ -197,9 +209,13 @@ function CarrierDashboardPage() {
     }
   };
 
-  const fetchTrips = async () => {
+  const fetchTrips = async (searchParams?: { search?: string; carrierName?: string }) => {
     try {
-      const res = await authApi.get("/api/v1/carrier/trips");
+      const params = new URLSearchParams();
+      if (searchParams?.search) params.append("search", searchParams.search);
+      if (searchParams?.carrierName) params.append("carrierName", searchParams.carrierName);
+
+      const res = await authApi.get(`/api/v1/carrier/trips?${params.toString()}`);
       setTrips(res.data);
     } catch (e) {
       console.error(e);
@@ -390,6 +406,7 @@ function CarrierDashboardPage() {
 
     fetchProfile();
     fetchCatalogs();
+    
     fetchBuses();
     fetchRoutes();
     fetchTrips();
@@ -412,7 +429,8 @@ function CarrierDashboardPage() {
       hasAC: bus.hasAC,
       hasWifi: bus.hasWifi,
       hasCharger: bus.hasCharger,
-      hasTv: bus.hasTv
+      hasTv: bus.hasTv,
+      carrierId: bus.carrierId
     });
     setIsBusModalOpen(true);
   };
@@ -427,7 +445,8 @@ function CarrierDashboardPage() {
         hasAC: values.hasAC || false,
         hasCharger: values.hasCharger || false,
         hasWifi: values.hasWifi || false,
-        hasTv: values.hasTv || false
+        hasTv: values.hasTv || false,
+        carrierId: values.carrierId
       };
 
       if (editingBus) {
@@ -464,7 +483,8 @@ function CarrierDashboardPage() {
     routeForm.setFieldsValue({
       fromStationId: route.fromStationId,
       toStationId: route.toStationId,
-      distanceKm: route.distanceKm
+      distanceKm: route.distanceKm,
+      carrierId: route.carrierId
     });
     setIsRouteModalOpen(true);
   };
@@ -474,7 +494,8 @@ function CarrierDashboardPage() {
       const payload = {
         fromStationId: values.fromStationId,
         toStationId: values.toStationId,
-        distanceKm: values.distanceKm
+        distanceKm: values.distanceKm,
+        carrierId: values.carrierId
       };
 
       if (editingRoute) {
@@ -512,7 +533,8 @@ function CarrierDashboardPage() {
       routeId: trip.routeId,
       busId: trip.busId,
       time: [dayjs(trip.departureTime), dayjs(trip.arrivalTime)],
-      price: trip.price
+      price: trip.price,
+      carrierId: trip.carrierId
     });
     setIsTripModalOpen(true);
   };
@@ -527,7 +549,8 @@ function CarrierDashboardPage() {
         busId: values.busId,
         departureTime,
         arrivalTime,
-        price: values.price
+        price: values.price,
+        carrierId: values.carrierId
       };
 
       if (editingTrip) {
@@ -784,7 +807,7 @@ function CarrierDashboardPage() {
 
   const getActiveTabTitle = () => {
     switch (activeKey) {
-      case "fleet": return "Мой автопарк";
+      case "fleet": return "Автопарк";
       case "routes": return "Маршруты и Направления";
       case "trips": return "Расписание и Рейсы";
       case "sales": return "Продажа билетов";
@@ -797,10 +820,25 @@ function CarrierDashboardPage() {
   return (
     <div className={styles.dashboardLayout}>
       {/* Sidebar navigation */}
-      <div className={styles.sidebar}>
+      <div className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`}>
         <div className={styles.brandHeader}>
-          <h2 className={styles.logoText}>BEKET</h2>
-          <div className={styles.logoSubtitle}>Carrier Panel</div>
+          {!collapsed ? (
+            <div style={{ flex: 1, textAlign: "left" }}>
+              <h2 className={styles.logoText}>BEKET</h2>
+              <div className={styles.logoSubtitle}>Carrier Panel</div>
+            </div>
+          ) : (
+            <div style={{ flex: 1, textAlign: "center" }}>
+              <h2 className={styles.logoText} style={{ fontSize: 24, margin: 0 }}>B</h2>
+            </div>
+          )}
+          <span 
+            className={styles.collapseToggle} 
+            onClick={() => setCollapsed(!collapsed)}
+            style={{ cursor: "pointer", fontSize: 18, color: "rgba(255, 255, 255, 0.65)", display: "flex", alignItems: "center" }}
+          >
+            {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+          </span>
         </div>
 
         <div className={styles.menuList}>
@@ -809,24 +847,25 @@ function CarrierDashboardPage() {
               <div
                 className={`${styles.menuItem} ${activeKey === "overview" ? styles.active : ""}`}
                 onClick={() => handleMenuClick("overview")}
+                title={collapsed ? "Главная" : undefined}
               >
                 <DashboardOutlined />
                 <span>Главная</span>
               </div>
 
-              {!profile.roles?.includes("Admin") && (
-                <div
-                  className={`${styles.menuItem} ${activeKey === "fleet" ? styles.active : ""}`}
-                  onClick={() => handleMenuClick("fleet")}
-                >
-                  <CarOutlined />
-                  <span>Мой автопарк</span>
-                </div>
-              )}
+              <div
+                className={`${styles.menuItem} ${activeKey === "fleet" ? styles.active : ""}`}
+                onClick={() => handleMenuClick("fleet")}
+                title={collapsed ? "Автопарк" : undefined}
+              >
+                <CarOutlined />
+                <span>Автопарк</span>
+              </div>
 
               <div
                 className={`${styles.menuItem} ${activeKey === "routes" ? styles.active : ""}`}
                 onClick={() => handleMenuClick("routes")}
+                title={collapsed ? "Направления" : undefined}
               >
                 <CompassOutlined />
                 <span>Направления</span>
@@ -835,6 +874,7 @@ function CarrierDashboardPage() {
               <div
                 className={`${styles.menuItem} ${activeKey === "trips" ? styles.active : ""}`}
                 onClick={() => handleMenuClick("trips")}
+                title={collapsed ? "Расписание рейсов" : undefined}
               >
                 <CalendarOutlined />
                 <span>Расписание рейсов</span>
@@ -843,6 +883,7 @@ function CarrierDashboardPage() {
               <div
                 className={`${styles.menuItem} ${activeKey === "employees" ? styles.active : ""}`}
                 onClick={() => handleMenuClick("employees")}
+                title={collapsed ? "Сотрудники" : undefined}
               >
                 <TeamOutlined />
                 <span>Сотрудники</span>
@@ -854,6 +895,7 @@ function CarrierDashboardPage() {
           <div
             className={`${styles.menuItem} ${activeKey === "sales" ? styles.active : ""}`}
             onClick={() => handleMenuClick("sales")}
+            title={collapsed ? "Продажа билетов" : undefined}
           >
             <ShoppingCartOutlined />
             <span>Продажа билетов</span>
@@ -863,12 +905,17 @@ function CarrierDashboardPage() {
           <div
             className={`${styles.menuItem} ${activeKey === "stats" ? styles.active : ""}`}
             onClick={() => handleMenuClick("stats")}
+            title={collapsed ? "Статистика продаж" : undefined}
           >
             <BarChartOutlined />
             <span>Статистика продаж</span>
           </div>
 
-          <div className={styles.logoutBtn} onClick={handleLogout}>
+          <div 
+            className={styles.logoutBtn} 
+            onClick={handleLogout}
+            title={collapsed ? "Выйти" : undefined}
+          >
             <LogoutOutlined />
             <span>Выйти</span>
           </div>
@@ -884,7 +931,9 @@ function CarrierDashboardPage() {
               <UserOutlined style={{ marginRight: 6 }} />
               <span>
                 {profile.carrierName ? (
-                  <>Компания: <strong>{profile.carrierName}</strong></>
+                  <>Автопарк: <strong>{profile.carrierName}</strong></>
+                ) : isAdmin ? (
+                  <strong>Администратор платформы</strong>
                 ) : (
                   <span style={{ color: "#ef4444", fontWeight: "bold" }}>Внимание: Автопарк не привязан!</span>
                 )}
@@ -899,7 +948,7 @@ function CarrierDashboardPage() {
           </Flex>
         </div>
 
-        {!profile.carrierId && !profile.roles?.includes("Admin") && (
+        {!profile.carrierId && !isAdmin && (
           <div style={{ padding: "0 24px", marginBottom: 16 }}>
             <div style={{
               background: "rgba(239, 68, 68, 0.15)",
@@ -928,9 +977,11 @@ function CarrierDashboardPage() {
             buses={buses}
             loading={loading}
             profileCarrierId={profile.carrierId}
+            isAdmin={isAdmin}
             onStartEdit={startEditBus}
             onDelete={handleDeleteBus}
             onOpenAddModal={() => setIsBusModalOpen(true)}
+            onSearch={fetchBuses}
           />
         )}
         {activeKey === "routes" && (
@@ -938,9 +989,11 @@ function CarrierDashboardPage() {
             routes={routes}
             loading={loading}
             profileCarrierId={profile.carrierId}
+            isAdmin={isAdmin}
             onStartEdit={startEditRoute}
             onDelete={handleDeleteRoute}
             onOpenAddModal={() => setIsRouteModalOpen(true)}
+            onSearch={fetchRoutes}
           />
         )}
         {activeKey === "trips" && (
@@ -950,11 +1003,13 @@ function CarrierDashboardPage() {
             isCashier={isCashier}
             loading={loading}
             profileCarrierId={profile.carrierId}
+            isAdmin={isAdmin}
             onToggleTripStatus={handleToggleTripStatus}
             onOpenSeatManagement={openSeatManagement}
             onStartEdit={startEditTrip}
             onDelete={handleDeleteTrip}
             onOpenAddModal={() => setIsTripModalOpen(true)}
+            onSearch={fetchTrips}
           />
         )}
         {activeKey === "sales" && (
@@ -963,6 +1018,7 @@ function CarrierDashboardPage() {
             buses={buses}
             loading={loading}
             profile={profile}
+            isAdmin={isAdmin}
             activeSalesTrip={activeSalesTrip}
             setActiveSalesTrip={setActiveSalesTrip}
             activeSalesTab={activeSalesTab}
@@ -1016,6 +1072,20 @@ function CarrierDashboardPage() {
         cancelText="Отмена"
       >
         <Form form={busForm} layout="vertical" onFinish={handleSaveBus}>
+          {isAdmin && (
+            <Form.Item
+              name="carrierId"
+              label="Автопарк"
+              rules={[{ required: true, message: "Выберите автопарк" }]}
+            >
+              <Select placeholder="Выберите автопарк">
+                {carrierCompanies.map(c => (
+                  <Select.Option key={c.id} value={c.id}>{c.name}</Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+          )}
+
           <Form.Item
             name="plateNumber"
             label="Государственный регистрационный номер"
@@ -1099,6 +1169,20 @@ function CarrierDashboardPage() {
         cancelText="Отмена"
       >
         <Form form={routeForm} layout="vertical" onFinish={handleSaveRoute}>
+          {isAdmin && (
+            <Form.Item
+              name="carrierId"
+              label="Автопарк"
+              rules={[{ required: true, message: "Выберите автопарк" }]}
+            >
+              <Select placeholder="Выберите автопарк">
+                {carrierCompanies.map(c => (
+                  <Select.Option key={c.id} value={c.id}>{c.name}</Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+          )}
+
           <Form.Item
             name="fromStationId"
             label="Пункт Отправления"
@@ -1150,6 +1234,20 @@ function CarrierDashboardPage() {
         cancelText="Отмена"
       >
         <Form form={tripForm} layout="vertical" onFinish={handleSaveTrip}>
+          {isAdmin && (
+            <Form.Item
+              name="carrierId"
+              label="Автопарк"
+              rules={[{ required: true, message: "Выберите автопарк" }]}
+            >
+              <Select placeholder="Выберите автопарк">
+                {carrierCompanies.map(c => (
+                  <Select.Option key={c.id} value={c.id}>{c.name}</Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+          )}
+
           <Form.Item
             name="routeId"
             label="Маршрут следования"
@@ -1284,14 +1382,14 @@ function CarrierDashboardPage() {
 
           <Form.Item
             name="carrierId"
-            label="Компания / Автопарк"
+            label="Автопарк"
             dependencies={["role"]}
             rules={[
               ({ getFieldValue }) => ({
                 validator(_, value) {
                   const role = getFieldValue("role");
                   if ((role === "Agent" || role === "Carrier") && !value) {
-                    return Promise.reject(new Error("Выберите компанию"));
+                    return Promise.reject(new Error("Выберите автопарк"));
                   }
                   return Promise.resolve();
                 },

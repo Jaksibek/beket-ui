@@ -42,6 +42,7 @@ interface SalesSectionProps {
     roles: string[];
     contactId: string | null;
   };
+  isAdmin?: boolean;
 
   // Active Sales flow states
   activeSalesTrip: any | null;
@@ -72,6 +73,7 @@ export function SalesSection({
   buses,
   loading,
   profile,
+  isAdmin,
   activeSalesTrip,
   setActiveSalesTrip,
   activeSalesTab,
@@ -109,8 +111,8 @@ export function SalesSection({
         title: "Место",
         dataIndex: "seatNumber",
         key: "seatNumber",
-        width: 80,
-        render: (text: string) => <Tag color="blue" style={{ fontSize: 14 }}>{text}</Tag>,
+        width: 60,
+        render: (text: string) => <Tag color="blue" style={{ fontSize: 12, margin: 0 }}>{text}</Tag>,
         sorter: (a: any, b: any) => Number(a.seatNumber) - Number(b.seatNumber)
       },
       {
@@ -118,12 +120,12 @@ export function SalesSection({
         key: "name",
         render: (_: any, record: any) => {
           const p = record.passenger;
-          if (!p) return <Text type="secondary">—</Text>;
+          if (!p) return <Text type="secondary" style={{ fontSize: 13 }}>—</Text>;
           const isOnline = p.buyerEmail !== "manual@beket.kz";
           return (
             <div>
-              <Text strong>{p.lastName} {p.firstName} {p.middleName || ""}</Text>
-              {isOnline && <Tag color="blue" style={{ marginLeft: 6, fontSize: 11 }}>Сайт</Tag>}
+              <Text strong style={{ fontSize: 13 }}>{p.lastName} {p.firstName} {p.middleName || ""}</Text>
+              {isOnline && <Tag color="blue" style={{ marginLeft: 6, fontSize: 10, padding: "0 4px" }}>Сайт</Tag>}
             </div>
           );
         }
@@ -131,23 +133,25 @@ export function SalesSection({
       {
         title: "Телефон",
         key: "phone",
+        width: 120,
         render: (_: any, record: any) => {
           const p = record.passenger;
-          if (!p || !p.buyerPhone) return <Text type="secondary">—</Text>;
-          return <a href={`tel:${p.buyerPhone}`} style={{ color: "#2563eb", fontWeight: "bold" }}>{p.buyerPhone}</a>;
+          if (!p || !p.buyerPhone) return <Text type="secondary" style={{ fontSize: 13 }}>—</Text>;
+          return <a href={`tel:${p.buyerPhone}`} style={{ color: "#2563eb", fontWeight: "bold", fontSize: 13 }}>{p.buyerPhone}</a>;
         }
       },
       {
         title: "Документ",
         key: "document",
+        width: 160,
         render: (_: any, record: any) => {
           const p = record.passenger;
-          if (!p) return <Text type="secondary">—</Text>;
+          if (!p) return <Text type="secondary" style={{ fontSize: 13 }}>—</Text>;
           const docTypeStr = p.documentType === "passport" ? "Удост." : p.documentType === "foreign_passport" ? "Паспорт" : p.documentType || "—";
           return (
-            <div>
+            <div style={{ fontSize: 13, lineHeight: "1.2" }}>
               <div>{docTypeStr} №{p.documentNumber}</div>
-              {p.iin && <div style={{ fontSize: 12, color: "#64748b" }}>ИИН: {p.iin}</div>}
+              {p.iin && <div style={{ fontSize: 11, color: "#64748b" }}>ИИН: {p.iin}</div>}
             </div>
           );
         }
@@ -155,13 +159,14 @@ export function SalesSection({
       {
         title: "Билет",
         key: "ticket",
+        width: 140,
         render: (_: any, record: any) => {
           const p = record.passenger;
-          if (!p) return <Text type="secondary">—</Text>;
+          if (!p) return <Text type="secondary" style={{ fontSize: 13 }}>—</Text>;
           return (
-            <div>
-              <Tag color="purple">{p.ticketNumber || "—"}</Tag>
-              {p.buyerEmail !== "manual@beket.kz" && <div style={{ fontSize: 11, color: "#64748b" }}>{p.buyerEmail}</div>}
+            <div style={{ lineHeight: "1.2" }}>
+              <Tag color="purple" style={{ fontSize: 11, margin: 0 }}>{p.ticketNumber || "—"}</Tag>
+              {p.buyerEmail !== "manual@beket.kz" && <div style={{ fontSize: 10, color: "#64748b", marginTop: 2 }}>{p.buyerEmail}</div>}
             </div>
           );
         }
@@ -169,21 +174,23 @@ export function SalesSection({
       {
         title: "Кем куплен",
         key: "createdByName",
+        width: 140,
         render: (_: any, record: any) => {
           const p = record.passenger;
-          if (!p) return <Text type="secondary">Покупатель (Сайт)</Text>;
+          if (!p) return <Text type="secondary" style={{ fontSize: 12 }}>Покупатель (Сайт)</Text>;
           const isManual = p.buyerEmail === "manual@beket.kz";
-          if (!isManual) return <Tag color="cyan">Покупатель (Сайт)</Tag>;
-          if (p.createdByName) return <Tag color="purple">Агент {p.createdByName}</Tag>;
-          return <Tag color="default">Касса / Агент</Tag>;
+          if (!isManual) return <Tag color="cyan" style={{ fontSize: 11, margin: 0 }}>Покупатель (Сайт)</Tag>;
+          if (p.createdByName) return <Tag color="purple" style={{ fontSize: 11, margin: 0 }}>Агент {p.createdByName}</Tag>;
+          return <Tag color="default" style={{ fontSize: 11, margin: 0 }}>Касса / Агент</Tag>;
         }
       },
       {
         title: "Статус",
         dataIndex: "status",
         key: "status",
+        width: 100,
         render: (status: string) => (
-          <Tag color={status === "Booked" ? "success" : "warning"}>
+          <Tag color={status === "Booked" ? "success" : "warning"} style={{ fontSize: 11, margin: 0 }}>
             {status === "Booked" ? "Продано" : "Забронировано"}
           </Tag>
         )
@@ -191,7 +198,7 @@ export function SalesSection({
       {
         title: "Действия",
         key: "action",
-        width: 150,
+        width: 90,
         render: (_: any, record: any) => {
           const p = record.passenger;
           const isManual = p && p.buyerEmail === "manual@beket.kz";
@@ -201,19 +208,21 @@ export function SalesSection({
           const canCancel = isManual && (!isAgent || p.createdById === profile.contactId);
 
           return (
-            <Flex gap={8}>
+            <Flex gap={6}>
               <Button
-                icon={<EditOutlined />}
+                size="small"
+                icon={<EditOutlined style={{ fontSize: 12 }} />}
                 onClick={() => startEditPassengerDetails(record.seatNumber, p)}
                 disabled={!p || !canEdit}
-                title={!p ? "Нет данных пассажира" : !canEdit ? "Вы можете редактировать только свои продажи" : "Редактировать данные пассажира"}
+                title={!p ? "Нет данных пассажира" : !canEdit ? "Вы можете редактировать только свои продажи" : "Редактировать"}
               />
               <Button
                 danger
-                icon={<DeleteOutlined />}
+                size="small"
+                icon={<DeleteOutlined style={{ fontSize: 12 }} />}
                 onClick={() => handleCancelManualBooking(record.seatNumber)}
                 disabled={!canCancel}
-                title={!canCancel ? "Вы можете отменять только свои продажи" : "Отменить продажу"}
+                title={!canCancel ? "Вы можете отменять только свои продажи" : "Отменить"}
               />
             </Flex>
           );
@@ -229,7 +238,9 @@ export function SalesSection({
         columns={columns}
         rowKey="id"
         bordered
+        size="small"
         pagination={false}
+        scroll={{ x: "max-content" }}
         locale={{ emptyText: "На этом рейсе пока нет проданных мест" }}
       />
     );
@@ -241,34 +252,43 @@ export function SalesSection({
         title: "Маршрут",
         key: "routeName",
         render: (_: any, record: any) => {
-          return <Text strong>{record.routeName}</Text>;
+          return <Text strong style={{ fontSize: 13 }}>{record.routeName || record.RouteName}</Text>;
         }
       },
+      ...(profile.roles?.includes("Admin") ? [
+        {
+          title: "Автопарк",
+          key: "carrierName",
+          render: (_: any, record: any) => {
+            return <Tag color="blue" style={{ fontSize: 11, padding: "0 6px", margin: 0 }}>{record.carrierName || record.CarrierName || "—"}</Tag>;
+          }
+        }
+      ] : []),
       {
         title: "Автобус",
         key: "busPlateNumber",
         render: (_: any, record: any) => {
           const bs = buses.find(b => b.id === record.busId);
-          return bs ? <Tag color="purple" style={{ fontSize: 13 }}>{bs.plateNumber}</Tag> : <Tag color="default">{record.busPlateNumber}</Tag>;
+          return bs ? <Tag color="purple" style={{ fontSize: 11, padding: "0 6px", margin: 0 }}>{bs.plateNumber}</Tag> : <Tag color="default" style={{ fontSize: 11, padding: "0 6px", margin: 0 }}>{record.busPlateNumber || record.BusPlateNumber}</Tag>;
         }
       },
       {
         title: "Отправление",
         dataIndex: "departureTime",
         key: "departureTime",
-        render: (val: string) => dayjs(val).format("DD.MM.YYYY HH:mm")
+        render: (val: string) => <span style={{ fontSize: 13 }}>{dayjs(val).format("DD.MM.YYYY HH:mm")}</span>
       },
       {
         title: "Прибытие",
         dataIndex: "arrivalTime",
         key: "arrivalTime",
-        render: (val: string) => dayjs(val).format("DD.MM.YYYY HH:mm")
+        render: (val: string) => <span style={{ fontSize: 13 }}>{dayjs(val).format("DD.MM.YYYY HH:mm")}</span>
       },
       {
         title: "Свободные места",
         key: "seatsStat",
         render: (_: any, record: any) => (
-          <Tag color={record.freeSeats === 0 ? "error" : "success"} style={{ fontSize: 13 }}>
+          <Tag color={record.freeSeats === 0 ? "error" : "success"} style={{ fontSize: 11, padding: "0 6px", margin: 0 }}>
             {record.freeSeats} из {record.totalSeats} свободно
           </Tag>
         )
@@ -277,25 +297,25 @@ export function SalesSection({
         title: "Цена билета",
         dataIndex: "price",
         key: "price",
-        render: (val: number) => <Text strong style={{ color: "#2563eb", fontSize: 15 }}>{val} KZT</Text>
+        render: (val: number) => <Text strong style={{ color: "#2563eb", fontSize: 13 }}>{val} KZT</Text>
       },
       {
         title: "Действия",
         key: "action",
-        width: 80,
+        width: 60,
         align: "center" as const,
         render: (_: any, record: any) => {
           const menuItems = [
             {
               key: "sell",
               label: "Оформить продажу",
-              icon: <ShoppingCartOutlined style={{ color: "#22c55e", fontSize: 16 }} />,
+              icon: <ShoppingCartOutlined style={{ color: "#22c55e", fontSize: 14 }} />,
               onClick: () => openSalesBooking(record),
             },
             {
               key: "passengers",
               label: "Список пассажиров",
-              icon: <TeamOutlined style={{ color: "#3b82f6", fontSize: 16 }} />,
+              icon: <TeamOutlined style={{ color: "#3b82f6", fontSize: 14 }} />,
               onClick: () => openSalesPassengers(record),
             },
           ];
@@ -304,8 +324,9 @@ export function SalesSection({
             <Dropdown menu={{ items: menuItems }} trigger={["click"]} placement="bottomRight">
               <Button
                 type="text"
-                icon={<MoreOutlined style={{ fontSize: 20 }} />}
-                disabled={!profile.carrierId}
+                size="small"
+                icon={<MoreOutlined style={{ fontSize: 16 }} />}
+                disabled={!profile.carrierId && !isAdmin}
               />
             </Dropdown>
           );
@@ -324,6 +345,8 @@ export function SalesSection({
           rowKey="id"
           loading={loading}
           bordered
+          size="small"
+          scroll={{ x: "max-content" }}
           pagination={{ pageSize: 8 }}
         />
       </Card>

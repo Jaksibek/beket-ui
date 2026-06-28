@@ -29,31 +29,32 @@ export function EmployeesSection({
       title: "Имя",
       dataIndex: "firstName",
       key: "firstName",
-      render: (text: string) => <Text strong>{text}</Text>
+      render: (text: string) => <Text strong style={{ fontSize: 13 }}>{text}</Text>
     },
     {
       title: "Фамилия",
       dataIndex: "lastName",
       key: "lastName",
-      render: (text: string) => <Text strong>{text}</Text>
+      render: (text: string) => <Text strong style={{ fontSize: 13 }}>{text}</Text>
     },
     {
       title: "Номер телефона (Логин)",
       dataIndex: "phoneNumber",
-      key: "phoneNumber"
+      key: "phoneNumber",
+      render: (text: string) => <span style={{ fontSize: 13 }}>{text}</span>
     },
     {
       title: "Email",
       dataIndex: "email",
       key: "email",
-      render: (text: string) => text || <Text type="secondary">—</Text>
+      render: (text: string) => text ? <span style={{ fontSize: 13 }}>{text}</span> : <Text type="secondary" style={{ fontSize: 13 }}>—</Text>
     },
     {
-      title: "Компания",
+      title: "Автопарк",
       key: "carrierName",
       render: (_: any, record: any) => {
         const name = record.carrierName || record.CarrierName;
-        return name ? <Tag color="purple">{name}</Tag> : <Text type="secondary">—</Text>;
+        return name ? <Tag color="purple" style={{ fontSize: 11, padding: "0 6px", margin: 0 }}>{name}</Tag> : <Text type="secondary" style={{ fontSize: 13 }}>—</Text>;
       }
     },
     {
@@ -63,10 +64,10 @@ export function EmployeesSection({
       render: (roles: string[]) => {
         const getRoleTag = (r: string) => {
           switch (r) {
-            case "Admin": return <Tag color="blue" key={r}>Администратор</Tag>;
-            case "Agent": return <Tag color="green" key={r}>Агент</Tag>;
-            case "Carrier": return <Tag color="orange" key={r}>Перевозчик</Tag>;
-            default: return <Tag color="default" key={r}>{r}</Tag>;
+            case "Admin": return <Tag color="blue" key={r} style={{ fontSize: 11, padding: "0 6px", margin: 0 }}>Администратор</Tag>;
+            case "Agent": return <Tag color="green" key={r} style={{ fontSize: 11, padding: "0 6px", margin: 0 }}>Агент</Tag>;
+            case "Carrier": return <Tag color="orange" key={r} style={{ fontSize: 11, padding: "0 6px", margin: 0 }}>Перевозчик</Tag>;
+            default: return <Tag color="default" key={r} style={{ fontSize: 11, padding: "0 6px", margin: 0 }}>{r}</Tag>;
           }
         };
         return (
@@ -79,7 +80,7 @@ export function EmployeesSection({
     {
       title: "Статус",
       key: "isActive",
-      width: 80,
+      width: 70,
       render: (_: any, record: any) => (
         <Switch
           size="small"
@@ -92,22 +93,24 @@ export function EmployeesSection({
       title: "Дата создания",
       dataIndex: "createdOn",
       key: "createdOn",
-      render: (val: string) => val ? dayjs(val).format("DD.MM.YYYY HH:mm") : "—"
+      render: (val: string) => <span style={{ fontSize: 13 }}>{val ? dayjs(val).format("DD.MM.YYYY HH:mm") : "—"}</span>
     },
     {
       title: "Действия",
       key: "action",
-      width: 120,
+      width: 90,
       render: (_: any, record: any) => (
-        <Flex gap={8}>
+        <Flex gap={6}>
           <Button
-            icon={<EditOutlined />}
+            size="small"
+            icon={<EditOutlined style={{ fontSize: 12 }} />}
             onClick={() => onStartEdit(record)}
             title="Редактировать сотрудника"
           />
           <Button
             danger
-            icon={<DeleteOutlined />}
+            size="small"
+            icon={<DeleteOutlined style={{ fontSize: 12 }} />}
             onClick={() => onDelete(record.id)}
             title="Удалить сотрудника"
           />
@@ -165,6 +168,8 @@ export function EmployeesSection({
           rowKey="id"
           loading={employeesLoading}
           bordered
+          size="small"
+          scroll={{ x: "max-content" }}
           pagination={{ pageSize: 8 }}
         />
       </Flex>
