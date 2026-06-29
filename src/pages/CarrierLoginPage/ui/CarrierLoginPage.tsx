@@ -345,7 +345,7 @@ function CarrierLoginPage() {
                             BEKET
                         </Title>
                         <div className={styles.subtitle}>
-                            {isForgotMode ? "Восстановление доступа" : "Портал Перевозчиков"}
+                            {isForgotMode ? "Восстановление доступа" : "Портал Автопарков"}
                         </div>
                     </div>
 

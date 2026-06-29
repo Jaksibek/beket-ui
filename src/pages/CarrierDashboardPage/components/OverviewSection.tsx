@@ -78,7 +78,7 @@ export function OverviewSection({
               <div>
                 <Text type="secondary" style={{ fontSize: 13, display: "block" }}>Статус верификации</Text>
                 <Tag color={profile.carrierName ? "success" : "error"} style={{ marginTop: 4 }}>
-                  {profile.carrierName ? "Подтвержденная компания" : "Автопарк не настроен"}
+                  {profile.carrierName ? "Подтвержденный автопарк" : "Автопарк не настроен"}
                 </Tag>
               </div>
             </Col>
@@ -87,7 +87,7 @@ export function OverviewSection({
       </Col>
 
       <Col span={24}>
-        <Card className={styles.glassCard} title="Добро пожаловать в Кабинет перевозчика">
+        <Card className={styles.glassCard} title="Добро пожаловать в Кабинет автопарка">
           <Typography.Paragraph style={{ fontSize: 15 }}>
             Здесь вы можете полноценно управлять автобусным парком вашего предприятия, создавать регулярные маршруты следования, а также планировать расписание поездок.
           </Typography.Paragraph>

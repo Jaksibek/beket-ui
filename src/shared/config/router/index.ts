@@ -14,4 +14,5 @@ export const appRoutes = {
   carrierPassengers: "/carrier/passengers",
   carrierEmployees: "/carrier/employees",
   carrierStats: "/carrier/stats",
+  carrierHistory: "/carrier/history",
 };

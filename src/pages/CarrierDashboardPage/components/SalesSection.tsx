@@ -252,7 +252,16 @@ export function SalesSection({
         title: "Маршрут",
         key: "routeName",
         render: (_: any, record: any) => {
-          return <Text strong style={{ fontSize: 13 }}>{record.routeName || record.RouteName}</Text>;
+          const name = record.routeName || record.RouteName || "";
+          const parts = name.split(" → ");
+          if (parts.length < 2) return <Text strong style={{ fontSize: 13 }}>{name}</Text>;
+          return (
+            <div style={{ display: "flex", flexDirection: "column", gap: 1, lineHeight: "1.2", minWidth: 150 }}>
+              <span style={{ fontSize: 13, fontWeight: 600 }}>{parts[0]}</span>
+              <span style={{ fontSize: 10, color: "#94a3b8", display: "inline-block", margin: "2px 0 2px 4px" }}>↓</span>
+              <span style={{ fontSize: 13, fontWeight: 600 }}>{parts[1]}</span>
+            </div>
+          );
         }
       },
       ...(profile.roles?.includes("Admin") ? [

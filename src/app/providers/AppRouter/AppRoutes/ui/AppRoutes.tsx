@@ -32,6 +32,7 @@ function AppRoutes() {
           <Route path={appRoutes.carrierPassengers} element={<CarrierDashboardPage />} />
           <Route path={appRoutes.carrierEmployees} element={<CarrierDashboardPage />} />
           <Route path={appRoutes.carrierStats} element={<CarrierDashboardPage />} />
+          <Route path={appRoutes.carrierHistory} element={<CarrierDashboardPage />} />
         </Route>
       </Route>
     </Routes>

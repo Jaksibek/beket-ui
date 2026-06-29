@@ -25,7 +25,8 @@ import {
   TeamOutlined,
   BarChartOutlined,
   MenuFoldOutlined,
-  MenuUnfoldOutlined
+  MenuUnfoldOutlined,
+  HistoryOutlined
 } from "@ant-design/icons";
 import { authApi } from "@/shared/api";
 import { appRoutes } from "@/shared/config/router";
@@ -41,6 +42,7 @@ import { EmployeesSection } from "../components/EmployeesSection";
 import { SalesSection } from "../components/SalesSection";
 import { SeatManagementModal } from "../components/SeatManagementModal";
 import { SalesStatsSection } from "../components/SalesStatsSection";
+import { HistorySection } from "../components/HistorySection";
 
 
 
@@ -61,7 +63,9 @@ function CarrierDashboardPage() {
             ? "employees"
             : location.pathname.includes("/stats")
               ? "stats"
-              : "overview";
+              : location.pathname.includes("/history")
+                ? "history"
+                : "overview";
 
   const handleMenuClick = (key: string) => {
     if (key === "overview") navigate(appRoutes.carrierDashboard);
@@ -71,6 +75,7 @@ function CarrierDashboardPage() {
     else if (key === "sales") navigate(appRoutes.carrierSales);
     else if (key === "employees") navigate(appRoutes.carrierEmployees);
     else if (key === "stats") navigate(appRoutes.carrierStats);
+    else if (key === "history") navigate(appRoutes.carrierHistory);
   };
 
   // React active profile state, pre-filled from local storage but updated dynamically from API
@@ -813,6 +818,7 @@ function CarrierDashboardPage() {
       case "sales": return "Продажа билетов";
       case "employees": return "Сотрудники";
       case "stats": return "Статистика продаж";
+      case "history": return "История рейсов";
       default: return "Главная";
     }
   };
@@ -878,6 +884,15 @@ function CarrierDashboardPage() {
               >
                 <CalendarOutlined />
                 <span>Расписание рейсов</span>
+              </div>
+
+              <div
+                className={`${styles.menuItem} ${activeKey === "history" ? styles.active : ""}`}
+                onClick={() => handleMenuClick("history")}
+                title={collapsed ? "История рейсов" : undefined}
+              >
+                <HistoryOutlined />
+                <span>История рейсов</span>
               </div>
 
               <div
@@ -1010,6 +1025,12 @@ function CarrierDashboardPage() {
             onDelete={handleDeleteTrip}
             onOpenAddModal={() => setIsTripModalOpen(true)}
             onSearch={fetchTrips}
+          />
+        )}
+        {activeKey === "history" && (
+          <HistorySection
+            buses={buses}
+            profileCarrierId={profile.carrierId}
           />
         )}
         {activeKey === "sales" && (
