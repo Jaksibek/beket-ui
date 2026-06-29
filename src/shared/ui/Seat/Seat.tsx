@@ -10,11 +10,13 @@ interface SeatProps {
     seatNumber: number;
     status: SeatStatus;
     isAisle?: boolean; // new prop to distinguish window vs aisle seats 
+    isVip?: boolean;
+    style?: React.CSSProperties;
     onClick: (seatNumber: number) => void;
 }
 
 export const Seat = memo((props: SeatProps) => {
-    const { seatNumber, status, isAisle, onClick } = props;
+    const { seatNumber, status, isAisle, style, onClick } = props;
 
     const handleClick = () => {
         if (status !== 'booked') {
@@ -35,6 +37,7 @@ export const Seat = memo((props: SeatProps) => {
         <div
             className={`${styles.seat} ${statusClass}`}
             onClick={handleClick}
+            style={style}
         >
             <Text className={styles.seatNumber}>{seatNumber}</Text>
         </div>

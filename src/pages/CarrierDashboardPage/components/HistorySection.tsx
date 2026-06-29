@@ -304,7 +304,7 @@ export function HistorySection({
       title: "Действия",
       key: "action",
       width: 80,
-      align: "center",
+      align: "center" as const,
       render: (_: any, record: any) => (
         <Tooltip title="Ведомость пассажиров">
           <Button

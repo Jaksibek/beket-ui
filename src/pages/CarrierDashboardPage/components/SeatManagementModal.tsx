@@ -4,24 +4,7 @@ import styles from "../ui/CarrierDashboardPage.module.scss";
 
 const { Title, Text } = Typography;
 
-// 53 seats constant bus scheme layout mapping coordinates
-const LAYOUT_COLUMNS = [
-  ['driver', null, null, null, 'door'],
-  [1, 2, null, 3, 4],
-  [5, 6, null, 7, 8],
-  [9, 10, null, 11, 12],
-  [13, 14, null, 15, 16],
-  [17, 18, null, 19, 20],
-  [21, 22, null, 23, 24],
-  [null, null, null, null, 'door'],
-  [25, 26, null, 27, 28],
-  [29, 30, null, 31, 32],
-  [33, 34, null, 35, 36],
-  [37, 38, null, 39, 40],
-  [41, 42, null, 43, 44],
-  [45, 46, null, 47, 48],
-  [49, 50, 51, 52, 53]
-];
+// Dynamic premium seat management layout mapping coordinates
 
 interface SeatManagementModalProps {
   isOpen: boolean;
@@ -92,39 +75,72 @@ export function SeatManagementModal({
           <div className={styles.busLayoutContainer}>
             <div className={styles.schemeContainer}>
               <div className={styles.seatRow}>
-                {[...LAYOUT_COLUMNS].reverse().map((col, colIndex) => (
-                  <div key={colIndex} className={styles.seatsGrid}>
-                    {col.map((cell, rowIndex) => {
-                      if (cell === null) {
-                        return <div key={`empty-${colIndex}-${rowIndex}`} className={styles.emptySpace} />;
-                      }
-                      if (cell === "driver") {
+                {(() => {
+                  const maxRow = Math.max(...seatsData.map(s => s.row ?? s.Row ?? 0), 0);
+                  const maxCol = Math.max(...seatsData.map(s => s.column ?? s.Column ?? 0), 0);
+
+                  const grid: any[][] = [];
+                  for (let r = 0; r <= maxRow; r++) {
+                    grid[r] = new Array(maxCol + 1).fill(null);
+                  }
+                  seatsData.forEach(s => {
+                    const row = s.row ?? s.Row ?? 0;
+                    const col = s.column ?? s.Column ?? 0;
+                    if (row <= maxRow && col <= maxCol) {
+                      grid[row][col] = s;
+                    }
+                  });
+
+                  return [...grid].reverse().map((rowCells, rIdx) => (
+                    <div key={rIdx} className={styles.seatsGrid}>
+                      {rowCells.map((cell, cIdx) => {
+                        if (!cell) {
+                          return <div key={`empty-${rIdx}-${cIdx}`} className={styles.emptySpace} />;
+                        }
+
+                        const code = cell.cellTypeCode || cell.CellTypeCode || "empty";
+                        if (code === "aisle" || code === "empty") {
+                          return <div key={`aisle-${rIdx}-${cIdx}`} className={styles.emptySpace} />;
+                        }
+
+                        if (code === "driver") {
+                          return (
+                            <div key={`driver-${rIdx}-${cIdx}`} className={styles.driverCell}>
+                              <div className={styles.wheel}></div>
+                            </div>
+                          );
+                        }
+
+                        if (code === "door") {
+                          return <div key={`door-${rIdx}-${cIdx}`} className={styles.facility}>EXIT</div>;
+                        }
+
+                        if (code === "wc") {
+                          return <div key={`wc-${rIdx}-${cIdx}`} className={styles.facility} style={{ background: "#7f1d1d", color: "#fca5a5" }}>WC</div>;
+                        }
+
+                        const seatNum = Number(cell.seatNumber || cell.Number || 0);
+                        const { status, price } = getSeatState(seatNum);
+                        const isVip = cell.type?.toUpperCase() === "VIP" || cell.Type?.toUpperCase() === "VIP";
+
                         return (
-                          <div key={`driver-${colIndex}-${rowIndex}`} className={styles.driverCell}>
-                            <div className={styles.wheel}></div>
+                          <div
+                            key={seatNum}
+                            className={`${styles.customSeat} ${styles[status]} ${isVip ? styles.vipSeat : ""}`}
+                            style={isVip && status === "free" ? {
+                              background: "linear-gradient(135deg, #eab308 0%, #ca8a04 100%)",
+                              borderColor: "#ca8a04"
+                            } : {}}
+                            onClick={() => onSeatClick(seatNum)}
+                          >
+                            <span className={styles.seatNum}>{seatNum}</span>
+                            {price > 0 && <span className={styles.seatPrice}>{price} ₸</span>}
                           </div>
                         );
-                      }
-                      if (cell === "door") {
-                        return <div key={`door-${colIndex}-${rowIndex}`} className={styles.facility}>ВХОД</div>;
-                      }
-
-                      const seatNum = cell as number;
-                      const { status, price } = getSeatState(seatNum);
-
-                      return (
-                        <div
-                          key={seatNum}
-                          className={`${styles.customSeat} ${styles[status]}`}
-                          onClick={() => onSeatClick(seatNum)}
-                        >
-                          <span className={styles.seatNum}>{seatNum}</span>
-                          {price > 0 && <span className={styles.seatPrice}>{price} ₸</span>}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
+                      })}
+                    </div>
+                  ));
+                })()}
               </div>
             </div>
           </div>

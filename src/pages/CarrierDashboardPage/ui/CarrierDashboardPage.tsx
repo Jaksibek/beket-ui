@@ -26,7 +26,8 @@ import {
   BarChartOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  HistoryOutlined
+  HistoryOutlined,
+  SettingOutlined
 } from "@ant-design/icons";
 import { authApi } from "@/shared/api";
 import { appRoutes } from "@/shared/config/router";
@@ -43,6 +44,7 @@ import { SalesSection } from "../components/SalesSection";
 import { SeatManagementModal } from "../components/SeatManagementModal";
 import { SalesStatsSection } from "../components/SalesStatsSection";
 import { HistorySection } from "../components/HistorySection";
+import { BusConfigSection } from "../components/BusConfigSection";
 
 
 
@@ -65,7 +67,9 @@ function CarrierDashboardPage() {
               ? "stats"
               : location.pathname.includes("/history")
                 ? "history"
-                : "overview";
+                : location.pathname.includes("/bus-config")
+                  ? "bus-config"
+                  : "overview";
 
   const handleMenuClick = (key: string) => {
     if (key === "overview") navigate(appRoutes.carrierDashboard);
@@ -76,6 +80,7 @@ function CarrierDashboardPage() {
     else if (key === "employees") navigate(appRoutes.carrierEmployees);
     else if (key === "stats") navigate(appRoutes.carrierStats);
     else if (key === "history") navigate(appRoutes.carrierHistory);
+    else if (key === "bus-config") navigate(appRoutes.carrierBusConfig);
   };
 
   // React active profile state, pre-filled from local storage but updated dynamically from API
@@ -819,6 +824,7 @@ function CarrierDashboardPage() {
       case "employees": return "Сотрудники";
       case "stats": return "Статистика продаж";
       case "history": return "История рейсов";
+      case "bus-config": return "Схемы и модели";
       default: return "Главная";
     }
   };
@@ -866,6 +872,15 @@ function CarrierDashboardPage() {
               >
                 <CarOutlined />
                 <span>Автопарк</span>
+              </div>
+
+              <div
+                className={`${styles.menuItem} ${activeKey === "bus-config" ? styles.active : ""}`}
+                onClick={() => handleMenuClick("bus-config")}
+                title={collapsed ? "Схемы и модели" : undefined}
+              >
+                <SettingOutlined />
+                <span>Схемы и модели</span>
               </div>
 
               <div
@@ -1032,6 +1047,9 @@ function CarrierDashboardPage() {
             buses={buses}
             profileCarrierId={profile.carrierId}
           />
+        )}
+        {activeKey === "bus-config" && (
+          <BusConfigSection />
         )}
         {activeKey === "sales" && (
           <SalesSection
