@@ -8,7 +8,7 @@ const { Option } = Select;
 
 interface PassengerCardProps {
   index: number;
-  seatNumber: number;
+  seatNumber: string | number;
 }
 
 export function PassengerCard({ index, seatNumber }: PassengerCardProps) {

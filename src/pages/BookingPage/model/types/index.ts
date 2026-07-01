@@ -21,7 +21,7 @@ export interface IBookingFormValues {
 
 export interface BookingLocationState {
   trip: ITrip;
-  selectedSeats: number[];
+  selectedSeats: (string | number)[];
   bookingId?: string;
   expiresAt?: string;
 }
@@ -29,7 +29,7 @@ export interface BookingLocationState {
 export interface IBookingSession {
   step: BookingStep;
   trip: ITrip;
-  selectedSeats: number[];
+  selectedSeats: (string | number)[];
   passengers: IPassenger[];
   email: string;
   phone: string;

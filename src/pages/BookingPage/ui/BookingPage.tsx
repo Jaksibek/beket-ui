@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Typography, Row, Col, Form, Button, Flex, message } from "antd";
 import { useTranslation } from "react-i18next";
@@ -29,9 +29,26 @@ function BookingPage() {
     // Protect route and restore session from localStorage
     useEffect(() => {
         const stored = localStorage.getItem("busgo_booking_session");
-        if (stored) {
+
+        // If the user just navigated here with a NEW bookingId from the seat-selection flow,
+        // the old localStorage session is stale — clear it and start fresh.
+        const incomingBookingId = (location.state as BookingLocationState)?.bookingId;
+        if (stored && incomingBookingId) {
             try {
                 const parsed = JSON.parse(stored) as IBookingSession;
+                if (parsed.bookingId !== incomingBookingId) {
+                    // New booking started — discard the old cached session
+                    localStorage.removeItem("busgo_booking_session");
+                }
+            } catch {
+                localStorage.removeItem("busgo_booking_session");
+            }
+        }
+
+        const freshStored = localStorage.getItem("busgo_booking_session");
+        if (freshStored) {
+            try {
+                const parsed = JSON.parse(freshStored) as IBookingSession;
                 // Calculate expiration using backend's expiresAt
                 const expiresTime = new Date(parsed.expiresAt).getTime();
                 const remaining = expiresTime - Date.now();
@@ -50,6 +67,7 @@ function BookingPage() {
         }
 
         // If no stored session, fallback to router state
+        const state = location.state as BookingLocationState;
         if (!state?.trip || !state?.selectedSeats || state.selectedSeats.length === 0 || !state?.bookingId || !state?.expiresAt) {
             navigate(appRoutes.home);
         } else {
@@ -68,18 +86,25 @@ function BookingPage() {
             localStorage.setItem("busgo_booking_session", JSON.stringify(initialSession));
             setSession(initialSession);
         }
-    }, [state, navigate, t]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
-    // Restore form values from loaded session
+    // Restore form values ONCE after the initial session is loaded from localStorage.
+    // Using a ref guard so this never re-runs on subsequent session updates triggered
+    // by typing (handleValuesChange calls setSession on every keystroke which would
+    // otherwise cause this effect to overwrite the user's input).
+    const formRestoredRef = useRef(false);
     useEffect(() => {
-        if (session && step === "form") {
+        if (session && step === "form" && !formRestoredRef.current) {
+            formRestoredRef.current = true;
             form.setFieldsValue({
                 passengers: session.passengers || [],
                 email: session.email || "",
                 phone: session.phone || ""
             });
         }
-    }, [session, step, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [session]);
 
     // Update session storage in real-time on value changes to survive page reloads
     const handleValuesChange = (_changedValues: any, allValues: IBookingFormValues) => {

@@ -6,8 +6,8 @@ import styles from './BusScheme.module.scss';
 
 interface Props {
     seatsData: ISeat[];
-    selectedSeats: number[];
-    onSeatClick: (num: number) => void;
+    selectedSeats: (string | number)[];
+    onSeatClick: (num: string | number) => void;
 }
 
 // Dynamic premium bus scheme layout mapping coordinates
@@ -33,8 +33,8 @@ export const BusScheme53Seats = memo(({ seatsData, selectedSeats, onSeatClick }:
     // Helper to determine the actual seat state based on API data
     const getSeatProps = (apiSeat: any) => {
         let status: SeatStatus = 'available';
-        const seatNum = Number(apiSeat.number || apiSeat.Number || 0);
-        const isSelected = selectedSeats.includes(seatNum);
+        const seatNum = apiSeat.number || apiSeat.Number || '';
+        const isSelected = selectedSeats.some(s => String(s) === String(seatNum));
 
         if (apiSeat.status === 'Booked' || apiSeat.status === 'Reserved' || apiSeat.Status === 'Booked' || apiSeat.Status === 'Reserved') {
             status = 'booked';
@@ -74,13 +74,13 @@ export const BusScheme53Seats = memo(({ seatsData, selectedSeats, onSeatClick }:
                             }
 
                             // It's a Seat Number
-                            const seatNum = Number(cell.number || cell.Number || 0);
+                            const seatNum = cell.number || cell.Number || '';
                             const { status } = getSeatProps(cell);
                             const isVip = cell.type?.toUpperCase() === 'VIP' || cell.Type?.toUpperCase() === 'VIP';
 
                             return (
                                 <Seat
-                                    key={seatNum}
+                                    key={String(seatNum)}
                                     seatNumber={seatNum}
                                     status={status}
                                     isVip={isVip}

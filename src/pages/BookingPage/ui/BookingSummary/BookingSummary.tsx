@@ -11,7 +11,7 @@ const { Title, Text } = Typography;
 
 interface BookingSummaryProps {
   trip: ITrip;
-  selectedSeats: number[];
+  selectedSeats: (string | number)[];
   totalPrice: number;
   loading: boolean;
 }

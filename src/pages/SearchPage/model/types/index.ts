@@ -42,6 +42,9 @@ export interface ISeat {
   isWindow: boolean;
   cellTypeCode: 'seat' | 'aisle' | 'door' | 'wc' | 'driver' | 'empty';
   type: string;
+  level?: number;
+  isLastSeat?: boolean;
+  IsLastSeat?: boolean;
 }
 
 export interface ITripSeatsResponse {

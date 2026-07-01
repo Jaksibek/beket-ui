@@ -220,180 +220,246 @@ export function BusConfigSection() {
   // Render Premium Graphical Bus Layout
   const renderGraphicalBus = (gridSeats: any[], rowCount: number, colCount: number, seatTypeStr?: string) => {
     const isVip = seatTypeStr?.toUpperCase() === "VIP" || seatTypeStr === "2";
+    const isSleeper = gridSeats.some(s => s.level === 2 || s.Level === 2);
 
-    // Setup 2D layout representation array
-    const layoutGrid: any[][] = [];
-    for (let r = 0; r <= rowCount; r++) {
-      layoutGrid[r] = new Array(colCount + 1).fill(null);
+    const normalizeSleeperSeats = (seats: any[]) => {
+      if (!isSleeper) return seats;
+      return seats.map(s => {
+        let row = s.row ?? s.Row ?? 0;
+        let col = s.column ?? s.Column ?? 0;
+        const isBack = s.isLastSeat || s.IsLastSeat;
+
+        if (isBack) {
+          const num = Number(s.seatNumber || s.Number || s.seatNo || s.SeatNo || 0);
+          if (num === 15) col = 0;
+          else if (num === 16) col = 1;
+          else if (num === 17) col = 3;
+          else if (num === 18) col = 4;
+        }
+
+        const code = s.cellTypeCode || s.CellTypeCode;
+        if (code === 'driver') {
+          col = 0;
+        } else if (code === 'door') {
+          col = 4;
+        }
+
+        return {
+          ...s,
+          row,
+          Row: row,
+          column: col,
+          Column: col
+        };
+      });
+    };
+
+    const normalizedSeats = normalizeSleeperSeats(gridSeats);
+
+    const renderSingleDeck = (deckSeats: any[], deckRowCount: number, deckColCount: number, borderClrAccent: string) => {
+      const layoutGrid: any[][] = [];
+      for (let r = 0; r <= deckRowCount; r++) {
+        layoutGrid[r] = new Array(deckColCount + 1).fill(null);
+      }
+
+      deckSeats.forEach(s => {
+        const row = s.row ?? s.Row ?? 0;
+        const col = s.column ?? s.Column ?? 0;
+        if (row <= deckRowCount && col <= deckColCount) {
+          layoutGrid[row][col] = s;
+        }
+      });
+
+      return (
+        <div style={{
+          background: "#f8fafc",
+          borderRadius: "24px",
+          padding: "24px 20px 24px 32px",
+          display: "inline-block",
+          border: `3px solid ${borderClrAccent}`,
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
+          position: "relative"
+        }}>
+          {/* Bus columns wrapper */}
+          <div style={{ display: "flex", gap: "10px", alignItems: "stretch" }}>
+            {[...layoutGrid].reverse().map((rowCells, rIdx) => {
+              const isBackRow = isSleeper && rowCells.some(cell => cell && (cell.isLastSeat || cell.IsLastSeat));
+
+              return (
+                <div key={rIdx} style={{ display: "flex", flexDirection: "column", gap: "10px", alignSelf: "stretch" }}>
+                  {rowCells.map((cell, cIdx) => {
+                    if (!cell) {
+                      if (isBackRow && cIdx === 2) {
+                        return null;
+                      }
+                      return <div key={`null-${rIdx}-${cIdx}`} style={{ width: 40, height: cIdx === 2 ? 12 : 40 }} />;
+                    }
+
+                    const code = cell.cellTypeCode || cell.CellTypeCode;
+                    if (code === "aisle" || code === "empty") {
+                      if (isBackRow && cIdx === 2) {
+                        return null;
+                      }
+                      return <div key={`aisle-${rIdx}-${cIdx}`} style={{ width: 40, height: cIdx === 2 ? 12 : 40 }} />;
+                    }
+
+                    if (code === "driver") {
+                      return (
+                        <div
+                          key={`driver-${rIdx}-${cIdx}`}
+                          style={{
+                            width: 40,
+                            height: 40,
+                            background: "#cbd5e1",
+                            borderRadius: "8px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            border: "1px solid #94a3b8",
+                            color: "#475569"
+                          }}
+                        >
+                          <Tooltip title="Водитель">
+                            <div style={{
+                              width: 24,
+                              height: 24,
+                              borderRadius: "50%",
+                              border: "3px dashed #475569",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center"
+                            }}>
+                              <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#475569" }} />
+                            </div>
+                          </Tooltip>
+                        </div>
+                      );
+                    }
+
+                    if (code === "door") {
+                      return (
+                        <div
+                          key={`door-${rIdx}-${cIdx}`}
+                          style={{
+                            width: 40,
+                            height: 40,
+                            background: "#15803d",
+                            borderRadius: "8px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            border: "1px solid #166534",
+                            color: "#fff",
+                            fontSize: 10,
+                            fontWeight: "bold"
+                          }}
+                        >
+                          EXIT
+                        </div>
+                      );
+                    }
+
+                    if (code === "wc") {
+                      return (
+                        <div
+                          key={`wc-${rIdx}-${cIdx}`}
+                          style={{
+                            width: 40,
+                            height: 40,
+                            background: "#7f1d1d",
+                            borderRadius: "8px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            border: "1px solid #991b1b",
+                            color: "#fca5a5",
+                            fontSize: 11,
+                            fontWeight: "bold"
+                          }}
+                        >
+                          WC
+                        </div>
+                      );
+                    }
+
+                    // Standard or VIP seats
+                    const level = cell.level ?? cell.Level;
+                    const tooltipTitle = level === 2 ? "Верхний" : level === 1 ? "Нижний" : undefined;
+
+                    let seatBg = isVip
+                      ? "linear-gradient(135deg, #eab308 0%, #ca8a04 100%)"
+                      : "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)";
+                    let borderClr = isVip ? "#ca8a04" : "#1d4ed8";
+
+                    if (level === 2) {
+                      seatBg = "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)";
+                      borderClr = "#2563eb";
+                    } else if (level === 1) {
+                      seatBg = "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)";
+                      borderClr = "#16a34a";
+                    }
+
+                    const seatElement = (
+                      <div
+                        style={{
+                          width: 40,
+                          height: isBackRow ? "100%" : 40,
+                          background: seatBg,
+                          borderRadius: "8px",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          border: `1px solid ${borderClr}`,
+                          boxShadow: "inset 0 2px 4px rgba(255,255,255,0.2), 0 4px 6px rgba(0,0,0,0.15)",
+                          color: "#fff",
+                          fontSize: 12,
+                          fontWeight: "bold",
+                          position: "relative",
+                          cursor: "pointer"
+                        }}
+                      >
+                        <span>{cell.number || cell.Number || cell.seatNumber || cell.SeatNumber || cell.seatNo || cell.SeatNo}</span>
+                        {/* Visual seat cushion lines */}
+                        <div style={{
+                          position: "absolute",
+                          bottom: 4,
+                          left: 6,
+                          right: 6,
+                          height: "4px",
+                          background: "rgba(255,255,255,0.3)",
+                          borderRadius: "2px"
+                        }} />
+                      </div>
+                    );
+
+                    return (
+                      <div key={`seat-${rIdx}-${cIdx}`} style={{ display: "inline-block", flex: isBackRow ? "1" : "none", height: isBackRow ? "100%" : "auto" }}>
+                        {tooltipTitle ? (
+                          <Tooltip title={tooltipTitle}>
+                            {seatElement}
+                          </Tooltip>
+                        ) : (
+                          seatElement
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    };
+
+    if (!isSleeper) {
+      return renderSingleDeck(normalizedSeats, rowCount, colCount, "#cbd5e1");
     }
 
-    gridSeats.forEach(s => {
-      if (s.row <= rowCount && s.column <= colCount) {
-        layoutGrid[s.row][s.column] = s;
-      }
-    });
-
-    return (
-      <div style={{
-        background: "#0f172a",
-        borderRadius: "24px",
-        padding: "24px 20px 24px 32px",
-        display: "inline-block",
-        border: "3px solid #334155",
-        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.3)",
-        position: "relative"
-      }}>
-        {/* Bus Front windshield bumper visual */}
-        <div style={{
-          position: "absolute",
-          right: 0,
-          top: "10px",
-          bottom: "10px",
-          width: "16px",
-          background: "#1e293b",
-          borderTopRightRadius: "12px",
-          borderBottomRightRadius: "12px",
-          borderLeft: "4px solid #3b82f6"
-        }} />
-
-        {/* Bus columns wrapper (rendered horizontally: front is right side, rear is left side) */}
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          {[...layoutGrid].reverse().map((rowCells, rIdx) => (
-            <div key={rIdx} style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {rowCells.map((cell, cIdx) => {
-                if (!cell) {
-                  return <div key={`null-${rIdx}-${cIdx}`} style={{ width: 40, height: 40 }} />;
-                }
-
-                const code = cell.cellTypeCode || cell.CellTypeCode;
-                if (code === "aisle" || code === "empty") {
-                  return <div key={`aisle-${rIdx}-${cIdx}`} style={{ width: 40, height: 40 }} />;
-                }
-
-                if (code === "driver") {
-                  return (
-                    <div
-                      key={`driver-${rIdx}-${cIdx}`}
-                      style={{
-                        width: 40,
-                        height: 40,
-                        background: "#334155",
-                        borderRadius: "8px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        border: "1px solid #475569",
-                        color: "#94a3b8"
-                      }}
-                    >
-                      <Tooltip title="Водитель">
-                        <div style={{
-                          width: 24,
-                          height: 24,
-                          borderRadius: "50%",
-                          border: "3px dashed #94a3b8",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center"
-                        }}>
-                          <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#94a3b8" }} />
-                        </div>
-                      </Tooltip>
-                    </div>
-                  );
-                }
-
-                if (code === "door") {
-                  return (
-                    <div
-                      key={`door-${rIdx}-${cIdx}`}
-                      style={{
-                        width: 40,
-                        height: 40,
-                        background: "#15803d",
-                        borderRadius: "8px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        border: "1px solid #166534",
-                        color: "#fff",
-                        fontSize: 10,
-                        fontWeight: "bold"
-                      }}
-                    >
-                      EXIT
-                    </div>
-                  );
-                }
-
-                if (code === "wc") {
-                  return (
-                    <div
-                      key={`wc-${rIdx}-${cIdx}`}
-                      style={{
-                        width: 40,
-                        height: 40,
-                        background: "#7f1d1d",
-                        borderRadius: "8px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        border: "1px solid #991b1b",
-                        color: "#fca5a5",
-                        fontSize: 11,
-                        fontWeight: "bold"
-                      }}
-                    >
-                      WC
-                    </div>
-                  );
-                }
-
-                // Standard or VIP seats
-                const seatBg = isVip
-                  ? "linear-gradient(135deg, #eab308 0%, #ca8a04 100%)"
-                  : "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)";
-                const borderClr = isVip ? "#ca8a04" : "#1d4ed8";
-
-                return (
-                  <div
-                    key={`seat-${rIdx}-${cIdx}`}
-                    style={{
-                      width: 40,
-                      height: 40,
-                      background: seatBg,
-                      borderRadius: "8px",
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      border: `1px solid ${borderClr}`,
-                      boxShadow: "inset 0 2px 4px rgba(255,255,255,0.2), 0 4px 6px rgba(0,0,0,0.15)",
-                      color: "#fff",
-                      fontSize: 12,
-                      fontWeight: "bold",
-                      position: "relative"
-                    }}
-                  >
-                    <span>{cell.number || cell.Number}</span>
-                    {/* Visual seat cushion lines */}
-                    <div style={{
-                      position: "absolute",
-                      bottom: 4,
-                      left: 6,
-                      right: 6,
-                      height: "4px",
-                      background: "rgba(255,255,255,0.3)",
-                      borderRadius: "2px"
-                    }} />
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+    const maxRow = Math.max(...normalizedSeats.map(s => s.row ?? s.Row ?? 0), 0);
+    const maxCol = Math.max(...normalizedSeats.map(s => s.column ?? s.Column ?? 0), 0);
+    return renderSingleDeck(normalizedSeats, maxRow, maxCol, "#cbd5e1");
   };
 
   // Columns configurations

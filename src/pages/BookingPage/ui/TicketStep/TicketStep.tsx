@@ -13,7 +13,7 @@ const { Title, Text } = Typography;
 
 interface TicketStepProps {
   trip: ITrip;
-  selectedSeats: number[];
+  selectedSeats: (string | number)[];
   passengers: IPassenger[];
   email: string;
   phone: string;

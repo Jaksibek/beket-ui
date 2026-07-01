@@ -7,16 +7,17 @@ const { Text } = Typography;
 export type SeatStatus = 'available' | 'booked' | 'selected';
 
 interface SeatProps {
-    seatNumber: number;
+    seatNumber: string | number;
     status: SeatStatus;
     isAisle?: boolean; // new prop to distinguish window vs aisle seats 
     isVip?: boolean;
     style?: React.CSSProperties;
-    onClick: (seatNumber: number) => void;
+    onClick: (seatNumber: string | number) => void;
+    children?: React.ReactNode;
 }
 
 export const Seat = memo((props: SeatProps) => {
-    const { seatNumber, status, isAisle, style, onClick } = props;
+    const { seatNumber, status, isAisle, style, onClick, children } = props;
 
     const handleClick = () => {
         if (status !== 'booked') {
@@ -39,7 +40,8 @@ export const Seat = memo((props: SeatProps) => {
             onClick={handleClick}
             style={style}
         >
-            <Text className={styles.seatNumber}>{seatNumber}</Text>
+            <Text className={styles.seatNumber} style={style?.color ? { color: style.color } : undefined}>{seatNumber}</Text>
+            {children}
         </div>
     );
 });

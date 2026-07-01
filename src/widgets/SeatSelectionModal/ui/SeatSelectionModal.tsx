@@ -7,6 +7,7 @@ import type { ITrip } from '@/pages/SearchPage';
 import type { ITripSeatsResponse, ISeat } from '@/pages/SearchPage/model/types';
 import API from '@/shared/api';
 import { BusScheme53Seats } from './BusSchemes/BusScheme53Seats';
+import { BusSchemeSleeperYutong } from './BusSchemes/BusSchemeSleeperYutong';
 import styles from './SeatSelectionModal.module.scss';
 import { appRoutes } from '@/shared/config/router';
 
@@ -23,7 +24,7 @@ export const SeatSelectionModal = memo((props: SeatSelectionModalProps) => {
     const { t } = useTranslation();
     const navigate = useNavigate();
 
-    const [selectedSeats, setSelectedSeats] = useState<number[]>([]);
+    const [selectedSeats, setSelectedSeats] = useState<(string | number)[]>([]);
     const [seatsData, setSeatsData] = useState<ISeat[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [isBooking, setIsBooking] = useState(false);
@@ -45,18 +46,18 @@ export const SeatSelectionModal = memo((props: SeatSelectionModalProps) => {
         }
     }, [isOpen, trip?.tripId]);
 
-    const handleSeatClick = (seatNumber: number) => {
-        setSelectedSeats((prev: number[]) => {
+    const handleSeatClick = (seatIdOrNumber: string | number) => {
+        setSelectedSeats((prev: (string | number)[]) => {
             // If already selected, allow deselection
-            if (prev.includes(seatNumber)) {
-                return prev.filter((s: number) => s !== seatNumber);
+            if (prev.includes(seatIdOrNumber)) {
+                return prev.filter((s: string | number) => s !== seatIdOrNumber);
             }
             // If adding a new item, check the maximum allowed threshold (4)
             if (prev.length >= 4) {
                 message.warning(t('You can select a maximum of 4 seats') || 'Вы можете выбрать не более 4 мест');
                 return prev;
             }
-            return [...prev, seatNumber];
+            return [...prev, seatIdOrNumber];
         });
     };
 
@@ -73,11 +74,23 @@ export const SeatSelectionModal = memo((props: SeatSelectionModalProps) => {
                 seatNumbers: selectedSeats.map(String)
             });
 
+            // Map selected seat values (GUIDs or numbers) to human readable names for booking confirmation page
+            const isSleeper = seatsData.some(s => s.level === 2);
+            const readableSeats = selectedSeats.map(val => {
+                const seat = seatsData.find(s => s.id === val || String(s.number) === String(val));
+                if (!seat) return val;
+                if (isSleeper) {
+                    const lvlName = seat.level === 2 ? 'Верх' : 'Низ';
+                    return `${seat.number} (${lvlName})`;
+                }
+                return seat.number || val;
+            });
+
             // Navigate to booking page, passing state plus the 15-minute lock details
             navigate(appRoutes.booking, {
                 state: {
                     trip,
-                    selectedSeats,
+                    selectedSeats: readableSeats,
                     bookingId: response.data.bookingId,
                     expiresAt: response.data.expiresAt
                 }
@@ -109,9 +122,11 @@ export const SeatSelectionModal = memo((props: SeatSelectionModalProps) => {
             );
         }
 
-        // We can use a switch statement here to render different constant layouts 
-        // based on the bus model or seatSchemeName from the API
-        // For demonstration, we default to the 53-seat template.
+        const schemeName = (trip?.bus?.seatSchemeName || '').toLowerCase();
+        if (schemeName.includes('sleeper') || schemeName.includes('спальн') || schemeName.includes('спальный')) {
+            return <BusSchemeSleeperYutong seatsData={seatsData} selectedSeats={selectedSeats} onSeatClick={handleSeatClick} />;
+        }
+
         switch (trip?.bus?.seatSchemeName) {
             // case '49-seats':
             //     return <BusScheme49Seats seatsData={seatsData} selectedSeats={selectedSeats} onSeatClick={handleSeatClick} />;
@@ -120,8 +135,22 @@ export const SeatSelectionModal = memo((props: SeatSelectionModalProps) => {
         }
     };
 
-    const totalPrice = selectedSeats.reduce((sum, seatNum) => {
-        const seat = seatsData.find(s => s.number === String(seatNum));
+    const isSleeper = seatsData.some(s => s.level === 2);
+
+    const getSeatDisplayName = (val: string | number) => {
+        const seat = seatsData.find(s => s.id === val || String(s.number) === String(val));
+        if (!seat) return val;
+        if (isSleeper) {
+            const lvlName = seat.level === 2 ? 'Верх' : 'Низ';
+            return `${seat.number} (${lvlName})`;
+        }
+        return seat.number || val;
+    };
+
+    const readableSelectedSeats = selectedSeats.map(getSeatDisplayName);
+
+    const totalPrice = selectedSeats.reduce((sum: number, val) => {
+        const seat = seatsData.find(s => s.id === val || String(s.number) === String(val));
         return sum + (seat?.price || trip.price);
     }, 0);
 
@@ -144,16 +173,12 @@ export const SeatSelectionModal = memo((props: SeatSelectionModalProps) => {
                     <div className={styles.legendWrapper}>
                         <Text strong className={styles.legendTitle}>{t('Класс ЗЛ')} — {trip.price} ₸</Text>
                         <Flex gap={24} className={styles.legend}>
-                            <Flex align="center" gap={8} className={`${styles.legendItem} ${styles.available}`}>
-                                <div className={`${styles.legendBox}`}></div>
-                                <Text>{t('Свободно', 'Свободно')}</Text>
-                            </Flex>
                             <Flex align="center" gap={8} className={`${styles.legendItem} ${styles.booked}`}>
                                 <div className={`${styles.legendBox}`}></div>
                                 <Text>{t('Занято', 'Занято')}</Text>
                             </Flex>
                             <Flex align="center" gap={8} className={`${styles.legendItem} ${styles.selected}`}>
-                                <div className={`${styles.legendBox}`}></div>
+                                <div className={`${styles.legendBox}`} style={{ background: 'linear-gradient(135deg, #eab308 0%, #ca8a04 100%)', borderColor: '#ca8a04' }}></div>
                                 <Text>{t('Ваш выбор', 'Ваш выбор')}</Text>
                             </Flex>
                         </Flex>
@@ -163,7 +188,7 @@ export const SeatSelectionModal = memo((props: SeatSelectionModalProps) => {
                         <div className={styles.summaryText}>
                             <Text type="secondary">{t('Выбранные места')}</Text>
                             <Title level={4} style={{ margin: 0 }}>
-                                {selectedSeats.length > 0 ? selectedSeats.join(', ') : '-'}
+                                {readableSelectedSeats.length > 0 ? readableSelectedSeats.join(', ') : '-'}
                             </Title>
                         </div>
                         <div className={styles.summaryText}>
