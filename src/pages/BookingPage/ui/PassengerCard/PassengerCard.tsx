@@ -18,10 +18,10 @@ export function PassengerCard({ index, seatNumber }: PassengerCardProps) {
     <Card className={styles.card} bordered={false}>
       <Flex justify="space-between" align="center" className={styles.cardHeader}>
         <Title level={4} style={{ margin: 0 }}>
-          {t("Пассажир")} {index + 1}
+          {t("Passenger")} {index + 1}
         </Title>
         <Text className={styles.seatBadge}>
-          {t("Место")} {seatNumber}
+          {t("Seat")} {seatNumber}
         </Text>
       </Flex>
       <Divider style={{ margin: "16px 0" }} />
@@ -30,27 +30,27 @@ export function PassengerCard({ index, seatNumber }: PassengerCardProps) {
         <Col xs={24} sm={8}>
           <Form.Item
             name={["passengers", index, "lastName"]}
-            label={t("Фамилия")}
-            rules={[{ required: true, message: t("Введите фамилию") }]}
+            label={t("Last Name")}
+            rules={[{ required: true, message: t("Enter last name") }]}
           >
-            <Input size="large" placeholder={t("Иванов")} />
+            <Input size="large" placeholder={t("Ivanov")} />
           </Form.Item>
         </Col>
         <Col xs={24} sm={8}>
           <Form.Item
             name={["passengers", index, "firstName"]}
-            label={t("Имя")}
-            rules={[{ required: true, message: t("Введите имя") }]}
+            label={t("First Name")}
+            rules={[{ required: true, message: t("Enter first name") }]}
           >
-            <Input size="large" placeholder={t("Иван")} />
+            <Input size="large" placeholder={t("Ivan")} />
           </Form.Item>
         </Col>
         <Col xs={24} sm={8}>
           <Form.Item
             name={["passengers", index, "middleName"]}
-            label={t("Отчество")}
+            label={t("Middle Name")}
           >
-            <Input size="large" placeholder={t("Иванович")} />
+            <Input size="large" placeholder={t("Ivanovich")} />
           </Form.Item>
         </Col>
       </Row>
@@ -59,23 +59,23 @@ export function PassengerCard({ index, seatNumber }: PassengerCardProps) {
         <Col xs={24} sm={8}>
           <Form.Item
             name={["passengers", index, "documentType"]}
-            label={t("Тип документа")}
+            label={t("Document Type")}
             initialValue="id_card"
             rules={[{ required: true }]}
           >
             <Select size="large">
-              <Option value="id_card">{t("Удостоверение личности")}</Option>
-              <Option value="passport">{t("Паспорт")}</Option>
-              <Option value="birth_certificate">{t("Свидетельство о рождении")}</Option>
-              <Option value="foreign_passport">{t("Иностранный паспорт")}</Option>
+              <Option value="id_card">{t("ID Card")}</Option>
+              <Option value="passport">{t("Passport")}</Option>
+              <Option value="birth_certificate">{t("Birth Certificate")}</Option>
+              <Option value="foreign_passport">{t("Foreign Passport")}</Option>
             </Select>
           </Form.Item>
         </Col>
         <Col xs={24} sm={8}>
           <Form.Item
             name={["passengers", index, "documentNumber"]}
-            label={t("Номер документа")}
-            rules={[{ required: true, message: t("Введите номер документа") }]}
+            label={t("Document Number")}
+            rules={[{ required: true, message: t("Enter document number") }]}
           >
             <Input size="large" />
           </Form.Item>
@@ -96,12 +96,12 @@ export function PassengerCard({ index, seatNumber }: PassengerCardProps) {
               return (
                 <Form.Item
                   name={["passengers", index, "iin"]}
-                  label={t("ИИН")}
+                  label={t("IIN")}
                   rules={
                     isForeigner
                       ? []
                       : [
-                        { required: true, message: t("Введите ИИН") },
+                        { required: true, message: t("Enter IIN") },
                         {
                           validator: (_, value) => {
                             if (!value) {
@@ -111,7 +111,7 @@ export function PassengerCard({ index, seatNumber }: PassengerCardProps) {
                               return Promise.resolve();
                             }
                             return Promise.reject(
-                              new Error(t("Неверный формат ИИН") || "Неверный формат ИИН")
+                              new Error(t("Invalid IIN format") || "Неверный формат ИИН")
                             );
                           }
                         }
@@ -122,7 +122,7 @@ export function PassengerCard({ index, seatNumber }: PassengerCardProps) {
                     size="large"
                     maxLength={12}
                     //disabled={isForeigner}
-                    placeholder={isForeigner ? t("Не требуется") : ""}
+                    placeholder={isForeigner ? t("Not required") : ""}
                   />
                 </Form.Item>
               );

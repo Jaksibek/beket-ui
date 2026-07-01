@@ -49,7 +49,7 @@ export function TicketStep({
 
   const passengerColumns = [
     {
-      title: t("Пассажир"),
+      title: t("Passenger"),
       dataIndex: "name",
       key: "name",
       render: (_: any, record: any) => (
@@ -59,25 +59,25 @@ export function TicketStep({
       )
     },
     {
-      title: t("Документ"),
+      title: t("Document"),
       dataIndex: "documentNumber",
       key: "documentNumber",
       render: (_: any, record: any) => (
         <Text>
-          {record.documentType === "foreign_passport" ? t("Иностранный паспорт") : t("Документ")}:{" "}
+          {record.documentType === "foreign_passport" ? t("Foreign Passport") : t("Document")}:{" "}
           {record.documentNumber}
         </Text>
       )
     },
     {
-      title: t("Место"),
+      title: t("Seat"),
       dataIndex: "seat",
       key: "seat",
       align: "center" as const,
       render: (seat: number) => <Text strong>{seat}</Text>
     },
     {
-      title: t("Номер билета"),
+      title: t("Ticket number"),
       dataIndex: "ticketNum",
       key: "ticketNum",
       render: (num: string) => <Text style={{ fontFamily: "monospace" }}>{num}</Text>
@@ -125,10 +125,10 @@ export function TicketStep({
       <Flex vertical align="center" gap={12} className="no-print" style={{ marginBottom: 32 }}>
         <CheckCircleOutlined style={{ fontSize: 64, color: "#52c41a" }} />
         <Title level={2} style={{ margin: 0, textAlign: "center" }}>
-          {t("Оплата прошла успешно!")}
+          {t("Payment successful!")}
         </Title>
         <Text type="secondary" style={{ fontSize: 16, textAlign: "center" }}>
-          {t("Ваш электронный билет сформирован. Копия отправлена на email:")}{" "}
+          {t("Your electronic ticket has been generated. A copy was sent to email:")}{" "}
           <Text strong>{email}</Text>
         </Text>
       </Flex>
@@ -141,10 +141,10 @@ export function TicketStep({
             <Title level={3} style={{ margin: 0, color: "var(--color-primary)" }}>
               BUSGO TICKETS
             </Title>
-            <Text type="secondary">{t("Электронный билет на автобус")}</Text>
+            <Text type="secondary">{t("Bus electronic ticket")}</Text>
           </Col>
           <Col style={{ textAlign: "right" }}>
-            <Text type="secondary">{t("Номер заказа")}:</Text>
+            <Text type="secondary">{t("Order number")}:</Text>
             <Title level={4} style={{ margin: 0, fontFamily: "monospace" }}>
               #{ticketId}
             </Title>
@@ -159,7 +159,7 @@ export function TicketStep({
             <Row gutter={[16, 16]}>
               <Col xs={12}>
                 <Text type="secondary" style={{ display: "block", fontSize: 12 }}>
-                  {t("Отправление")}
+                  {t("Departure")}
                 </Text>
                 <Title level={4} style={{ margin: "4px 0" }}>
                   {trip.route.fromCity}
@@ -173,7 +173,7 @@ export function TicketStep({
               </Col>
               <Col xs={12}>
                 <Text type="secondary" style={{ display: "block", fontSize: 12 }}>
-                  {t("Прибытие")}
+                  {t("Arrival")}
                 </Text>
                 <Title level={4} style={{ margin: "4px 0" }}>
                   {trip.route.toCity}
@@ -200,7 +200,7 @@ export function TicketStep({
               </Col>
               <Col xs={12}>
                 <Text type="secondary" style={{ display: "block", fontSize: 12 }}>
-                  {t("Телефон покупателя")}
+                  {t("Buyer's Phone")}
                 </Text>
                 <Text strong style={{ fontSize: 15 }}>
                   {phone}
@@ -218,7 +218,7 @@ export function TicketStep({
                 style={{ width: 140, height: 140, display: "block" }}
               />
               <Text type="secondary" style={{ fontSize: 11, textAlign: "center" }}>
-                {t("Предъявите QR-код при посадке")}
+                {t("Present QR code upon boarding")}
               </Text>
             </Flex>
           </Col>
@@ -226,7 +226,7 @@ export function TicketStep({
 
         {/* Passenger Table */}
         <Title level={4} style={{ marginTop: 24, marginBottom: 12 }}>
-          {t("Информация о пассажирах")}
+          {t("Passengers info")}
         </Title>
         <Table
           columns={passengerColumns}
@@ -242,10 +242,10 @@ export function TicketStep({
         {/* Footer info */}
         <Flex justify="space-between" align="center">
           <Text type="secondary" style={{ fontSize: 12 }}>
-            * {t("Пожалуйста, прибудьте на посадку за 15 минут до отправления.")}
+            * {t("Please arrive for boarding 15 minutes before departure.")}
           </Text>
           <Text strong style={{ fontSize: 16, color: "var(--color-primary)" }}>
-            {t("Итого оплачено")}: {trip.price * selectedSeats.length} ₸
+            {t("Total paid")}: {trip.price * selectedSeats.length} ₸
           </Text>
         </Flex>
       </Card>
@@ -261,7 +261,7 @@ export function TicketStep({
             onClick={handlePrint}
             style={{ height: 50, borderRadius: 12 }}
           >
-            {t("Печать билета")}
+            {t("Print ticket")}
           </Button>
         </Col>
         <Col xs={12}>
@@ -272,7 +272,7 @@ export function TicketStep({
             onClick={onReset}
             style={{ height: 50, borderRadius: 12 }}
           >
-            {t("На главную")}
+            {t("To main page")}
           </Button>
         </Col>
       </Row>

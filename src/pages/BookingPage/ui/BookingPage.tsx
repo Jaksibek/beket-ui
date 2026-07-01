@@ -54,7 +54,7 @@ function BookingPage() {
                 const remaining = expiresTime - Date.now();
                 if (remaining <= 0) {
                     localStorage.removeItem("busgo_booking_session");
-                    message.warning(t("Время сессии бронирования истекло") || "Время сессии бронирования истекло");
+                    message.warning(t("Booking session has expired") || "Время сессии бронирования истекло");
                     navigate(appRoutes.home);
                 } else {
                     setSession(parsed);
@@ -163,7 +163,7 @@ function BookingPage() {
             message.success(t("Данные пассажиров успешно подтверждены!") || "Данные пассажиров успешно подтверждены!");
         } catch (error: any) {
             console.error("Booking confirmation error:", error);
-            const errMsg = error.response?.data || t("Произошла ошибка при бронировании");
+            const errMsg = error.response?.data || t("An error occurred during booking");
             message.error(errMsg);
         } finally {
             setIsSubmitting(false);
@@ -186,7 +186,7 @@ function BookingPage() {
 
     const handleExpire = () => {
         localStorage.removeItem("busgo_booking_session");
-        message.error(t("Время на оплату заказа истекло. Бронь аннулирована.") || "Время на оплату заказа истекло. Бронь аннулирована.");
+        message.error(t("Payment time has expired. Booking was cancelled.") || "Время на оплату заказа истекло. Бронь аннулирована.");
         navigate(appRoutes.home);
     };
 
@@ -201,7 +201,7 @@ function BookingPage() {
             <div className={styles.bookingPage}>
                 <Flex align="center" gap={12} className={styles.header} style={{ marginBottom: 24 }}>
                     <Title level={2} style={{ margin: 0 }}>
-                        {t("Оплата заказа")}
+                        {t("Order Payment")}
                     </Title>
                 </Flex>
                 <PaymentStep
@@ -254,7 +254,7 @@ function BookingPage() {
                     className={styles.backButton}
                 />
                 <Title level={2} style={{ margin: 0 }}>
-                    {t("Оформление заказа")}
+                    {t("Checkout")}
                 </Title>
             </Flex>
 

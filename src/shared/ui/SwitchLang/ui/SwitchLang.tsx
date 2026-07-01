@@ -13,10 +13,6 @@ const items: MenuProps["items"] = [
     label: "Русский",
     key: LangEnum.RU,
   },
-  {
-    label: "English",
-    key: LangEnum.EN,
-  },
 ];
 
 function SwitchLang() {

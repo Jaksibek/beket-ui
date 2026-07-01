@@ -36,28 +36,28 @@ export function BookingSummary({ trip, selectedSeats, totalPrice, loading }: Boo
         {trip.route.fromCity} — {trip.route.toCity}
       </Title>
       <Text type="secondary" className={styles.busInfo}>
-        {trip.bus.brand} {trip.bus.model} • {t("Класс ЗЛ")}
+        {trip.bus.brand} {trip.bus.model} • {t("Class ZL")}
       </Text>
 
       <Divider style={{ margin: "16px 0" }} />
 
       <Flex vertical gap={12}>
         <Flex justify="space-between">
-          <Text type="secondary">{t("Отправление")}:</Text>
+          <Text type="secondary">{t("Departure")}:</Text>
           <Text>{formatDate(trip.route.departureTime)}</Text>
         </Flex>
         <Flex justify="space-between">
-          <Text type="secondary">{t("Прибытие")}:</Text>
+          <Text type="secondary">{t("Arrival")}:</Text>
           <Text>{formatDate(trip.route.arrivalTime)}</Text>
         </Flex>
         <Flex justify="space-between">
-          <Text type="secondary">{t("Пассажиры")}:</Text>
+          <Text type="secondary">{t("Passengers")}:</Text>
           <Text>
-            {selectedSeats.length} {t("взрослых")}
+            {selectedSeats.length} {t("adult(s)")}
           </Text>
         </Flex>
         <Flex justify="space-between">
-          <Text type="secondary">{t("Места")}:</Text>
+          <Text type="secondary">{t("Seats")}:</Text>
           <Text>{selectedSeats.join(", ")}</Text>
         </Flex>
       </Flex>
@@ -66,7 +66,7 @@ export function BookingSummary({ trip, selectedSeats, totalPrice, loading }: Boo
 
       <Flex justify="space-between" align="end" style={{ marginBottom: 24 }}>
         <Title level={4} style={{ margin: 0 }}>
-          {t("Итого к оплате")}
+          {t("Total to pay")}
         </Title>
         <Title level={3} style={{ margin: 0, color: "var(--color-primary)" }}>
           {totalPrice} ₸
@@ -81,7 +81,7 @@ export function BookingSummary({ trip, selectedSeats, totalPrice, loading }: Boo
         loading={loading}
         className={styles.submitButton}
       >
-        {t("Бронировать")}
+        {t("Booking")}
       </Button>
     </Card>
   );

@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { Tooltip } from 'antd';
+import { useTranslation } from 'react-i18next';
 import { Seat } from '@/shared/ui/Seat';
 import type { SeatStatus } from '@/shared/ui/Seat';
 import type { ISeat } from '@/pages/SearchPage/model/types';
@@ -11,7 +12,8 @@ interface Props {
     onSeatClick: (num: string | number) => void;
 }
 
-export const BusSchemeSleeperYutong = memo(({ seatsData, selectedSeats, onSeatClick }: Props) => {
+export const BusSchemeSleeperYutong40 = memo(({ seatsData, selectedSeats, onSeatClick }: Props) => {
+    const { t } = useTranslation();
     if (!seatsData || seatsData.length === 0) return null;
 
     // Helper to determine the actual seat state based on API data
@@ -32,32 +34,79 @@ export const BusSchemeSleeperYutong = memo(({ seatsData, selectedSeats, onSeatCl
     };
 
     const normalizeSleeperSeats = (seats: ISeat[]) => {
-        return seats.map(s => {
+        let mapped = seats.map(s => {
             let row = s.row;
             let col = s.column;
-            const isBack = s.isLastSeat || s.IsLastSeat;
+            let numStr = s.number || "";
+            let level = s.level ?? 1;
 
+            if (row === 1) {
+                if (numStr === "00" && level === 2) {
+                    numStr = "02";
+                    row = 1;
+                    col = 1;
+                } else if (numStr === "00" && level === 1) {
+                    numStr = "02";
+                    row = 2;
+                    col = 1;
+                } else if (numStr === "0" && level === 2) {
+                    numStr = "01";
+                    row = 1;
+                    col = 0;
+                } else if (numStr === "0" && level === 1) {
+                    numStr = "01";
+                    row = 2;
+                    col = 0;
+                }
+            } else if (row >= 2) {
+                row = row + 1;
+            }
+
+            const isBack = s.isLastSeat || s.IsLastSeat;
             if (isBack) {
-                const num = Number(s.number || 0);
+                const num = Number(numStr || 0);
                 if (num === 15) col = 0;
                 else if (num === 16) col = 1;
                 else if (num === 17) col = 3;
                 else if (num === 18) col = 4;
             }
 
-            const code = s.cellTypeCode;
+            let code = s.cellTypeCode;
             if (code === 'driver') {
                 col = 0;
             } else if (code === 'door') {
-                col = 4;
+                if (row === 0) {
+                    code = 'empty';
+                } else {
+                    col = 4;
+                }
             }
 
             return {
                 ...s,
+                number: numStr,
                 row,
-                column: col
+                column: col,
+                cellTypeCode: code
             };
         });
+
+        // Inject EXIT door in Row 1 Col 4 and Row 2 Col 4
+
+        mapped.push({
+            id: "virtual-exit-door-row2",
+            cellTypeCode: "door",
+            row: 2,
+            column: 4,
+            level: 1,
+            status: "Free",
+            price: 0,
+            isWindow: false,
+            type: "door",
+            number: ""
+        });
+
+        return mapped;
     };
 
     const buildGrid = (seats: ISeat[]) => {
@@ -106,7 +155,11 @@ export const BusSchemeSleeperYutong = memo(({ seatsData, selectedSeats, onSeatCl
                                 if (code === 'driver') {
                                     return (
                                         <div key={`driver-${rIdx}-${cIdx}`} className={styles.driverCell}>
-                                            <div className={styles.wheel}></div>
+                                            <div className={styles.wheel}>
+                                                <div className={styles.spoke}></div>
+                                                <div className={styles.spoke}></div>
+                                                <div className={styles.spoke}></div>
+                                            </div>
                                         </div>
                                     );
                                 }
@@ -150,35 +203,35 @@ export const BusSchemeSleeperYutong = memo(({ seatsData, selectedSeats, onSeatCl
                                     };
                                 }
 
-                                const tooltipTitle = isUpper ? "Верхний" : "Нижний";
+                                 const tooltipTitle = isUpper ? t('Upper') : t('Lower');
 
-                                return (
-                                    <div key={String(seatNum)} style={{ display: 'inline-block', flex: isBackRow ? '1' : 'none', height: isBackRow ? '100%' : 'auto' }}>
-                                        <Tooltip title={tooltipTitle}>
-                                            <Seat
-                                                seatNumber={seatNum}
-                                                status={status}
-                                                style={{
-                                                    ...customStyle,
-                                                    position: 'relative',
-                                                    width: '64px',
-                                                    height: isBackRow ? '100%' : '32px',
-                                                    borderRadius: '6px',
-                                                    borderWidth: '1px',
-                                                    borderStyle: 'solid',
-                                                    fontSize: '11px',
-                                                    fontWeight: 'bold'
-                                                }}
-                                                onClick={() => onSeatClick(cell.id)}
-                                            >
-                                                <span className={styles.bunkBadge}>
-                                                    {isUpper ? '↑' : '↓'}
-                                                </span>
-                                                <div className={`${styles.bedPillow} ${isUpper ? styles.upperPillow : styles.lowerPillow}`} />
-                                            </Seat>
-                                        </Tooltip>
-                                    </div>
-                                );
+                                 return (
+                                     <Tooltip key={String(seatNum)} title={tooltipTitle}>
+                                         <div style={{ display: 'inline-block', flex: isBackRow ? '1' : 'none', height: isBackRow ? '100%' : 'auto' }}>
+                                             <Seat
+                                                 seatNumber={seatNum}
+                                                 status={status}
+                                                 style={{
+                                                     ...customStyle,
+                                                     position: 'relative',
+                                                     width: '64px',
+                                                     height: isBackRow ? '100%' : '32px',
+                                                     borderRadius: '6px',
+                                                     borderWidth: '1px',
+                                                     borderStyle: 'solid',
+                                                     fontSize: '11px',
+                                                     fontWeight: 'bold'
+                                                 }}
+                                                 onClick={() => onSeatClick(cell.id)}
+                                             >
+                                                 <span className={styles.bunkBadge}>
+                                                     {isUpper ? '↑' : '↓'}
+                                                 </span>
+                                                 <div className={`${styles.bedPillow} ${isUpper ? styles.upperPillow : styles.lowerPillow}`} />
+                                             </Seat>
+                                         </div>
+                                     </Tooltip>
+                                 );
                             })}
                         </div>
                     );

@@ -7,7 +7,8 @@ import type { ITrip } from '@/pages/SearchPage';
 import type { ITripSeatsResponse, ISeat } from '@/pages/SearchPage/model/types';
 import API from '@/shared/api';
 import { BusScheme53Seats } from './BusSchemes/BusScheme53Seats';
-import { BusSchemeSleeperYutong } from './BusSchemes/BusSchemeSleeperYutong';
+import { BusSchemeSleeperYutong40 } from './BusSchemes/BusSchemeSleeperYutong40';
+import { BusSchemeSleeperYutong36 } from './BusSchemes/BusSchemeSleeperYutong36';
 import styles from './SeatSelectionModal.module.scss';
 import { appRoutes } from '@/shared/config/router';
 
@@ -80,7 +81,7 @@ export const SeatSelectionModal = memo((props: SeatSelectionModalProps) => {
                 const seat = seatsData.find(s => s.id === val || String(s.number) === String(val));
                 if (!seat) return val;
                 if (isSleeper) {
-                    const lvlName = seat.level === 2 ? 'Верх' : 'Низ';
+                    const lvlName = seat.level === 2 ? t('Upper') : t('Lower');
                     return `${seat.number} (${lvlName})`;
                 }
                 return seat.number || val;
@@ -124,7 +125,10 @@ export const SeatSelectionModal = memo((props: SeatSelectionModalProps) => {
 
         const schemeName = (trip?.bus?.seatSchemeName || '').toLowerCase();
         if (schemeName.includes('sleeper') || schemeName.includes('спальн') || schemeName.includes('спальный')) {
-            return <BusSchemeSleeperYutong seatsData={seatsData} selectedSeats={selectedSeats} onSeatClick={handleSeatClick} />;
+            if (schemeName.includes('36')) {
+                return <BusSchemeSleeperYutong36 seatsData={seatsData} selectedSeats={selectedSeats} onSeatClick={handleSeatClick} />;
+            }
+            return <BusSchemeSleeperYutong40 seatsData={seatsData} selectedSeats={selectedSeats} onSeatClick={handleSeatClick} />;
         }
 
         switch (trip?.bus?.seatSchemeName) {
@@ -141,7 +145,7 @@ export const SeatSelectionModal = memo((props: SeatSelectionModalProps) => {
         const seat = seatsData.find(s => s.id === val || String(s.number) === String(val));
         if (!seat) return val;
         if (isSleeper) {
-            const lvlName = seat.level === 2 ? 'Верх' : 'Низ';
+            const lvlName = seat.level === 2 ? t('Upper') : t('Lower');
             return `${seat.number} (${lvlName})`;
         }
         return seat.number || val;
@@ -171,28 +175,28 @@ export const SeatSelectionModal = memo((props: SeatSelectionModalProps) => {
 
                 <div className={styles.bottomSection}>
                     <div className={styles.legendWrapper}>
-                        <Text strong className={styles.legendTitle}>{t('Класс ЗЛ')} — {trip.price} ₸</Text>
+                        <Text strong className={styles.legendTitle}>{t('Class ZL')} — {trip.price} ₸</Text>
                         <Flex gap={24} className={styles.legend}>
                             <Flex align="center" gap={8} className={`${styles.legendItem} ${styles.booked}`}>
                                 <div className={`${styles.legendBox}`}></div>
-                                <Text>{t('Занято', 'Занято')}</Text>
+                                <Text>{t('Booked')}</Text>
                             </Flex>
                             <Flex align="center" gap={8} className={`${styles.legendItem} ${styles.selected}`}>
                                 <div className={`${styles.legendBox}`} style={{ background: 'linear-gradient(135deg, #eab308 0%, #ca8a04 100%)', borderColor: '#ca8a04' }}></div>
-                                <Text>{t('Ваш выбор', 'Ваш выбор')}</Text>
+                                <Text>{t('Selected')}</Text>
                             </Flex>
                         </Flex>
                     </div>
 
                     <div className={styles.summary}>
                         <div className={styles.summaryText}>
-                            <Text type="secondary">{t('Выбранные места')}</Text>
+                            <Text type="secondary">{t('Selected seats')}</Text>
                             <Title level={4} style={{ margin: 0 }}>
                                 {readableSelectedSeats.length > 0 ? readableSelectedSeats.join(', ') : '-'}
                             </Title>
                         </div>
                         <div className={styles.summaryText}>
-                            <Text type="secondary">{t('К оплате', 'К оплате')}</Text>
+                            <Text type="secondary">{t('To pay', 'К оплате')}</Text>
                             <Title level={4} style={{ margin: 0, color: 'var(--color-primary)' }}>
                                 {totalPrice} ₸
                             </Title>
@@ -206,7 +210,7 @@ export const SeatSelectionModal = memo((props: SeatSelectionModalProps) => {
                             disabled={selectedSeats.length === 0}
                             loading={isBooking}
                         >
-                            {t('Выбрать', 'Выбрать')}
+                            {t('Select', 'Выбрать')}
                         </Button>
                     </div>
                 </div>

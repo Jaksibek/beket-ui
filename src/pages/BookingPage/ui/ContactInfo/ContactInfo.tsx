@@ -11,20 +11,20 @@ export function ContactInfo() {
   return (
     <Card className={styles.card} bordered={false}>
       <Title level={4} style={{ marginTop: 0 }}>
-        {t("Контактные данные покупателя")}
+        {t("Buyer Contact Details")}
       </Title>
       <Text type="secondary" style={{ display: "block", marginBottom: 24 }}>
-        {t("На этот email и номер телефона мы отправим билеты и чек")}
+        {t("We will send the tickets and receipt to this email and phone number")}
       </Text>
 
       <Row gutter={16}>
         <Col xs={24} sm={12}>
           <Form.Item
             name="email"
-            label={t("Электронная почта")}
+            label={t("Email")}
             rules={[
-              { required: true, message: t("Введите email") },
-              { type: "email", message: t("Некорректный email") }
+              { required: true, message: t("Enter email") },
+              { type: "email", message: t("Invalid email") }
             ]}
           >
             <Input size="large" placeholder="example@mail.com" />
@@ -33,10 +33,10 @@ export function ContactInfo() {
         <Col xs={24} sm={12}>
           <Form.Item
             name="phone"
-            label={t("Телефон")}
+            label={t("Phone")}
             getValueFromEvent={(e) => formatPhone(e.target.value)}
             rules={[
-              { required: true, message: t("Введите телефон") },
+              { required: true, message: t("Enter phone number") },
               {
                 validator: (_, value) => {
                   if (!value) {
@@ -46,7 +46,7 @@ export function ContactInfo() {
                     return Promise.resolve();
                   }
                   return Promise.reject(
-                    new Error(t("Некорректный номер телефона") || "Некорректный номер телефона")
+                    new Error(t("Invalid phone number") || "Некорректный номер телефона")
                   );
                 }
               }

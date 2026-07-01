@@ -77,41 +77,96 @@ export function SeatManagementModal({
               {(() => {
                 const isSleeper = seatsData.some(s => s.level === 2 || s.Level === 2);
 
-                const normalizeSleeperSeats = (seats: any[]) => {
-                  if (!isSleeper) return seats;
-                  return seats.map(s => {
-                    let row = s.row ?? s.Row ?? 0;
-                    let col = s.column ?? s.Column ?? 0;
-                    const isBack = s.isLastSeat || s.IsLastSeat;
+    const normalizeSleeperSeats = (seats: any[]) => {
+      if (!isSleeper) return seats;
+      let mapped = seats.map(s => {
+        let row = s.row ?? s.Row ?? 0;
+        let col = s.column ?? s.Column ?? 0;
+        let numStr = String(s.seatNumber || s.Number || s.seatNo || s.SeatNo || s.number || "");
+        let level = s.level ?? s.Level ?? 1;
 
-                    if (isBack) {
-                      const num = Number(s.seatNumber || s.Number || s.seatNo || s.SeatNo || 0);
-                      if (num === 15) col = 0;
-                      else if (num === 16) col = 1;
-                      else if (num === 17) col = 3;
-                      else if (num === 18) col = 4;
-                    }
+        if (row === 1) {
+          if (numStr === "00" && level === 2) {
+            numStr = "02";
+            row = 1;
+            col = 1;
+          } else if (numStr === "00" && level === 1) {
+            numStr = "02";
+            row = 2;
+            col = 1;
+          } else if (numStr === "0" && level === 2) {
+            numStr = "01";
+            row = 1;
+            col = 0;
+          } else if (numStr === "0" && level === 1) {
+            numStr = "01";
+            row = 2;
+            col = 0;
+          }
+        } else if (row >= 2) {
+          row = row + 1;
+        }
 
-                    const code = s.cellTypeCode || s.CellTypeCode;
-                    if (code === 'driver') {
-                      col = 0;
-                    } else if (code === 'door') {
-                      col = 4;
-                    }
+        const isBack = s.isLastSeat || s.IsLastSeat;
+        if (isBack) {
+          const num = Number(numStr || 0);
+          if (num === 15) col = 0;
+          else if (num === 16) col = 1;
+          else if (num === 17) col = 3;
+          else if (num === 18) col = 4;
+        }
 
-                    return {
-                      ...s,
-                      row,
-                      Row: row,
-                      column: col,
-                      Column: col
-                    };
-                  });
-                };
+        let code = s.cellTypeCode || s.CellTypeCode;
+        if (code === 'driver') {
+          col = 0;
+        } else if (code === 'door') {
+          if (row === 0) {
+            code = 'empty';
+          } else {
+            col = 4;
+          }
+        }
 
-                const normalizedSeats = normalizeSleeperSeats(seatsData);
+        return {
+          ...s,
+          seatNumber: numStr,
+          number: numStr,
+          Number: numStr,
+          row,
+          Row: row,
+          column: col,
+          Column: col,
+          cellTypeCode: code,
+          CellTypeCode: code
+        };
+      });
 
-                const renderSingleDeck = (deckSeats: any[], deckRowCount: number, deckColCount: number, borderClrAccent: string) => {
+      // Inject virtual exit door in Row 1 and 2 Col 4
+
+      mapped.push({
+        id: "virtual-exit-door-row2",
+        cellTypeCode: "door",
+        CellTypeCode: "door",
+        row: 2,
+        Row: 2,
+        column: 4,
+        Column: 4,
+        level: 1,
+        Level: 1,
+        status: "Free",
+        Status: "Free",
+        price: 0,
+        Price: 0,
+        isWindow: false,
+        type: "door"
+      });
+
+      return mapped;
+    };
+
+    const normalizedSeats = normalizeSleeperSeats(seatsData);
+
+    const renderSingleDeck = (deckSeats: any[], deckRowCount: number, deckColCount: number, borderClrAccent: string) => {
                   const maxRow = deckRowCount;
                   const maxCol = deckColCount;
 
