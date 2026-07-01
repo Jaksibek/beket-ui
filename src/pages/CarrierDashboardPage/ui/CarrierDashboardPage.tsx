@@ -174,7 +174,7 @@ function CarrierDashboardPage() {
   const [selectedTrip, setSelectedTrip] = useState<any>(null);
   const [seatsData, setSeatsData] = useState<any[]>([]);
   const [seatsLoading, setSeatsLoading] = useState(false);
-  const [selectedSeats, setSelectedSeats] = useState<number[]>([]);
+  const [selectedSeats, setSelectedSeats] = useState<(string | number)[]>([]);
 
   // Price overrides state
   const [individualPrice, setIndividualPrice] = useState<number | null>(null);
@@ -636,8 +636,32 @@ function CarrierDashboardPage() {
     fetchTripSeats(trip.id);
   };
 
-  const handleSeatClick = (seatNum: number) => {
-    const seatInfo = seatsData.find(s => s.seatNumber === String(seatNum));
+  const handleSeatClick = (seatIdOrNum: string | number) => {
+    const idStr = String(seatIdOrNum);
+    let searchNum = idStr;
+    let searchLvl: number | null = null;
+    if (idStr.includes('_')) {
+      const parts = idStr.split('_');
+      searchNum = parts[0];
+      searchLvl = Number(parts[1]);
+    }
+
+    const findSeat = (target: string | number) => {
+      const tStr = String(target);
+      let sNum = tStr;
+      let sLvl: number | null = null;
+      if (tStr.includes('_')) {
+        const parts = tStr.split('_');
+        sNum = parts[0];
+        sLvl = Number(parts[1]);
+      }
+      return seatsData.find(s => 
+        String(s.seatNumber || s.number || s.Number || "") === sNum &&
+        (sLvl === null || Number(s.level || s.Level || 1) === sLvl)
+      );
+    };
+
+    const seatInfo = findSeat(seatIdOrNum);
     const isBookedOrReserved = seatInfo && (seatInfo.status === "Booked" || seatInfo.status === "Reserved");
 
     if (isSeatModalOpen && isBookedOrReserved) {
@@ -649,24 +673,24 @@ function CarrierDashboardPage() {
       if (isBookedOrReserved) {
         // Booked or reserved seats can only be selected individually to inspect passenger details
         setIndividualPrice(null);
-        return [seatNum];
+        return [seatIdOrNum];
       }
 
       // Free seats logic: filter out any booked/reserved seats from the selection
       const freePrev = prev.filter(num => {
-        const info = seatsData.find(s => s.seatNumber === String(num));
+        const info = findSeat(num);
         return !info || (info.status !== "Booked" && info.status !== "Reserved");
       });
 
-      let next: number[];
-      if (freePrev.includes(seatNum)) {
-        next = freePrev.filter(x => x !== seatNum);
+      let next: (string | number)[];
+      if (freePrev.some(x => String(x) === idStr)) {
+        next = freePrev.filter(x => String(x) !== idStr);
       } else {
-        next = [...freePrev, seatNum];
+        next = [...freePrev, seatIdOrNum];
       }
 
       if (next.length >= 1) {
-        const firstSeat = seatsData.find(s => s.seatNumber === String(next[0]));
+        const firstSeat = findSeat(next[0]);
         setIndividualPrice(firstSeat?.price || null);
       } else {
         setIndividualPrice(null);
@@ -723,10 +747,16 @@ function CarrierDashboardPage() {
     }
   };
 
-  const handleCancelManualBooking = (seatNumber: string) => {
+  const handleCancelManualBooking = (seatIdOrNum: string) => {
+    const parts = seatIdOrNum.split('_');
+    const num = parts[0];
+    const lvl = parts[1];
+    const displayNum = num === '0' ? '01' : (num === '00' ? '02' : num);
+    const lvlLabel = lvl ? (lvl === '2' ? ' (верх)' : ' (низ)') : '';
+
     Modal.confirm({
       title: "Подтверждение отмены",
-      content: `Вы действительно хотите отменить продажу билета на место ${seatNumber}?`,
+      content: `Вы действительно хотите отменить продажу билета на место ${displayNum}${lvlLabel}?`,
       okText: "Да, отменить",
       okType: "danger",
       cancelText: "Отмена",
@@ -735,7 +765,7 @@ function CarrierDashboardPage() {
         if (!tripId) return;
         setCancelLoading(true);
         try {
-          await authApi.post(`/api/v1/carrier/trips/${tripId}/seats/${seatNumber}/cancel-manual`);
+          await authApi.post(`/api/v1/carrier/trips/${tripId}/seats/${seatIdOrNum}/cancel-manual`);
           message.success("Продажа билета успешно отменена!");
           setSelectedSeats([]);
           fetchTripSeats(tripId);
@@ -1346,6 +1376,7 @@ function CarrierDashboardPage() {
         setIndividualPrice={setIndividualPrice}
         handleUpdatePrices={handleUpdatePrices}
         priceSubmitting={priceSubmitting}
+        buses={buses}
       />
 
       {/* 5. Modal: Add Employee */}

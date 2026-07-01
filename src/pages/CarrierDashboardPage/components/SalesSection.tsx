@@ -1,4 +1,4 @@
-import { Button, Card, Flex, Spin, Table, Tag, Typography, Form, Input, Select, Dropdown, Tooltip } from "antd";
+import { Button, Card, Flex, Spin, Table, Tag, Typography, Form, Input, Select, Dropdown, Tooltip, Row, Col } from "antd";
 import {
   ShoppingCartOutlined,
   TeamOutlined,
@@ -10,6 +10,9 @@ import {
 import dayjs from "dayjs";
 import type { FormInstance } from "antd";
 import styles from "../ui/CarrierDashboardPage.module.scss";
+import { BusScheme53Seats } from "@/widgets/SeatSelectionModal/ui/BusSchemes/BusScheme53Seats";
+import { AgentSchemeSleeperYutong36 } from "@/widgets/SeatSelectionModal/ui/BusSchemes/AgentSchemeSleeperYutong36";
+import { AgentSchemeSleeperYutong40 } from "@/widgets/SeatSelectionModal/ui/BusSchemes/AgentSchemeSleeperYutong40";
 
 const { Title, Text } = Typography;
 
@@ -34,8 +37,8 @@ interface SalesSectionProps {
   setActiveSalesTab: (tab: string) => void;
   seatsLoading: boolean;
   seatsData: any[];
-  selectedSeats: number[];
-  setSelectedSeats: (seats: number[]) => void;
+  selectedSeats: (string | number)[];
+  setSelectedSeats: (seats: (string | number)[]) => void;
 
   // Forms & submission states
   passengerForm: FormInstance;
@@ -45,7 +48,7 @@ interface SalesSectionProps {
   // Callbacks
   openSalesBooking: (trip: any) => void;
   openSalesPassengers: (trip: any) => void;
-  handleSeatClick: (seatNum: number) => void;
+  handleSeatClick: (seatNum: string | number) => void;
   handleManualBooking: (values: any) => void;
   handleCancelManualBooking: (seatNumber: string) => void;
   startEditPassengerDetails: (seatNumber: string, passenger: any) => void;
@@ -374,291 +377,110 @@ export function SalesSection({
         ) : (
           <Flex vertical gap={16} style={{ width: "100%" }}>
             {activeSalesTab === "scheme" ? (
-              <div className={styles.seatModalContainer}>
-                {/* Left: Custom Bus scheme representation */}
-                <div className={styles.busLayoutContainer}>
-                  <div className={styles.schemeContainer} style={{ background: "transparent", border: "none", boxShadow: "none", padding: 0 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 20, width: "100%" }}>
+                {/* Top: Full width bus scheme representation */}
+                <div className={styles.busLayoutContainer} style={{ width: "100%", display: "flex", justifyContent: "center", padding: "28px 16px" }}>
+                  <div style={{ display: "flex", justifyContent: "center" }}>
                     {(() => {
-                      const isSleeper = seatsData.some(s => s.level === 2 || s.Level === 2);
+                      const tripBus = buses.find(b => b.id === activeSalesTrip.busId);
+                      const schemeName = (activeSalesTrip.seatSchemeName || tripBus?.seatSchemeName || '').toLowerCase();
 
-          const normalizeSleeperSeats = (seats: any[]) => {
-      if (!isSleeper) return seats;
-      let mapped = seats.map(s => {
-        let row = s.row ?? s.Row ?? 0;
-        let col = s.column ?? s.Column ?? 0;
-        let numStr = String(s.seatNumber || s.Number || s.seatNo || s.SeatNo || s.number || "");
-        let level = s.level ?? s.Level ?? 1;
-
-        if (row === 1) {
-          if (numStr === "00" && level === 2) {
-            numStr = "02";
-            row = 1;
-            col = 1;
-          } else if (numStr === "00" && level === 1) {
-            numStr = "02";
-            row = 2;
-            col = 1;
-          } else if (numStr === "0" && level === 2) {
-            numStr = "01";
-            row = 1;
-            col = 0;
-          } else if (numStr === "0" && level === 1) {
-            numStr = "01";
-            row = 2;
-            col = 0;
-          }
-        } else if (row >= 2) {
-          row = row + 1;
-        }
-
-        const isBack = s.isLastSeat || s.IsLastSeat;
-        if (isBack) {
-          const num = Number(numStr || 0);
-          if (num === 15) col = 0;
-          else if (num === 16) col = 1;
-          else if (num === 17) col = 3;
-          else if (num === 18) col = 4;
-        }
-
-        let code = s.cellTypeCode || s.CellTypeCode;
-        if (code === 'driver') {
-          col = 0;
-        } else if (code === 'door') {
-          if (row === 0) {
-            code = 'empty';
-          } else {
-            col = 4;
-          }
-        }
-
-        return {
-          ...s,
-          seatNumber: numStr,
-          number: numStr,
-          Number: numStr,
-          row,
-          Row: row,
-          column: col,
-          Column: col,
-          cellTypeCode: code,
-          CellTypeCode: code
-        };
-      });
-
-      // Inject virtual exit door in Row 1 and 2 Col 4
-
-      mapped.push({
-        id: "virtual-exit-door-row2",
-        cellTypeCode: "door",
-        CellTypeCode: "door",
-        row: 2,
-        Row: 2,
-        column: 4,
-        Column: 4,
-        level: 1,
-        Level: 1,
-        status: "Free",
-        Status: "Free",
-        price: 0,
-        Price: 0,
-        isWindow: false,
-        type: "door"
-      });
-
-      return mapped;
-    };
-
-    const normalizedSeats = normalizeSleeperSeats(seatsData);
-
-    const renderSingleDeck = (deckSeats: any[], deckRowCount: number, deckColCount: number, borderClrAccent: string) => {
-                        const maxRow = deckRowCount;
-                        const maxCol = deckColCount;
-
-                        const grid: any[][] = [];
-                        for (let r = 0; r <= maxRow; r++) {
-                          grid[r] = new Array(maxCol + 1).fill(null);
+                      if (schemeName.includes('sleeper') || schemeName.includes('спальн') || schemeName.includes('спальный')) {
+                        if (schemeName.includes('36')) {
+                          return <AgentSchemeSleeperYutong36 seatsData={seatsData} selectedSeats={selectedSeats} onSeatClick={handleSeatClick} />;
                         }
-                        deckSeats.forEach(s => {
-                          const row = s.row ?? s.Row ?? 0;
-                          const col = s.column ?? s.Column ?? 0;
-                          if (row <= maxRow && col <= maxCol) {
-                            grid[row][col] = s;
-                          }
-                        });
+                        return <AgentSchemeSleeperYutong40 seatsData={seatsData} selectedSeats={selectedSeats} onSeatClick={handleSeatClick} />;
+                      }
 
-                        return (
-                          <div className={styles.schemeContainer} style={{ border: `3px solid ${borderClrAccent}`, borderRadius: "24px", padding: "24px 20px 24px 32px", background: "#f8fafc", display: "inline-block", position: "relative", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
-                            <div className={styles.seatRow} style={isSleeper ? { alignItems: "stretch" } : {}}>
-                              {[...grid].reverse().map((rowCells, rIdx) => {
-                                const isBackRow = isSleeper && rowCells.some(cell => cell && (cell.isLastSeat || cell.IsLastSeat));
-
-                                return (
-                                  <div key={rIdx} className={styles.seatsGrid} style={isBackRow ? { alignSelf: "stretch" } : {}}>
-                                    {rowCells.map((cell, cIdx) => {
-                                      if (!cell) {
-                                        if (isBackRow && cIdx === 2) {
-                                          return null;
-                                        }
-                                        return <div key={`empty-${rIdx}-${cIdx}`} className={styles.emptySpace} style={cIdx === 2 ? { height: '12px' } : undefined} />;
-                                      }
-
-                                      const code = cell.cellTypeCode || cell.CellTypeCode || "empty";
-                                      if (code === "aisle" || code === "empty") {
-                                        if (isBackRow && cIdx === 2) {
-                                          return null;
-                                        }
-                                        return <div key={`aisle-${rIdx}-${cIdx}`} className={styles.emptySpace} style={cIdx === 2 ? { height: '12px' } : undefined} />;
-                                      }
-
-                                      if (code === "driver") {
-                                        return (
-                                          <div key={`driver-${rIdx}-${cIdx}`} className={styles.driverCell} style={{ background: '#cbd5e1', border: '1px solid #94a3b8' }}>
-                                            <div className={styles.wheel} style={{ borderColor: '#475569' }}></div>
-                                          </div>
-                                        );
-                                      }
-
-                                      if (code === "door") {
-                                        return <div key={`door-${rIdx}-${cIdx}`} className={styles.facility} style={{ background: '#15803d', borderColor: '#166534', color: '#fff' }}>EXIT</div>;
-                                      }
-
-                                      if (code === "wc") {
-                                        return <div key={`wc-${rIdx}-${cIdx}`} className={styles.facility} style={{ background: "#7f1d1d", color: "#fca5a5" }}>WC</div>;
-                                      }
-
-                                      const seatNum = Number(cell.seatNumber || cell.Number || cell.seatNo || cell.SeatNo || 0);
-                                      const { status, price } = getSeatState(seatNum);
-                                      const isVip = cell.type?.toUpperCase() === "VIP" || cell.Type?.toUpperCase() === "VIP";
-                                      const level = cell.level ?? cell.Level;
-
-                                      let customStyle: React.CSSProperties = {};
-                                      if (level === 2) {
-                                        if (status === "free") {
-                                          customStyle = {
-                                            background: "#3b82f6",
-                                            borderColor: "#2563eb",
-                                            color: "#fff"
-                                          };
-                                        } else if (status === "selected") {
-                                          customStyle = {
-                                            background: "#1d4ed8",
-                                            borderColor: "#fbbf24",
-                                            color: "#fff",
-                                            boxShadow: "0 0 8px #fbbf24"
-                                          };
-                                        }
-                                      } else if (level === 1) {
-                                        if (status === "free") {
-                                          customStyle = {
-                                            background: "#22c55e",
-                                            borderColor: "#16a34a",
-                                            color: "#fff"
-                                          };
-                                        } else if (status === "selected") {
-                                          customStyle = {
-                                            background: "#15803d",
-                                            borderColor: "#fbbf24",
-                                            color: "#fff",
-                                            boxShadow: "0 0 8px #fbbf24"
-                                          };
-                                        }
-                                      } else if (isVip && status === "free") {
-                                        customStyle = {
-                                          background: "linear-gradient(135deg, #eab308 0%, #ca8a04 100%)",
-                                          borderColor: "#ca8a04"
-                                        };
-                                      }
-
-                                      const tooltipTitle = level === 2 ? "Верхний" : "Нижний";
-
-                                      const seatElement = (
-                                        <div
-                                          className={`${styles.customSeat} ${styles[status]} ${isVip ? styles.vipSeat : ""}`}
-                                          style={{
-                                            ...customStyle,
-                                            height: isBackRow ? "100%" : undefined
-                                          }}
-                                          onClick={() => handleSeatClick(seatNum)}
-                                        >
-                                          <span className={styles.seatNum}>{cell.seatNumber || cell.Number || cell.seatNo || cell.SeatNo || seatNum}</span>
-                                          {price > 0 && <span className={styles.seatPrice}>{price} ₸</span>}
-                                        </div>
-                                      );
-
-                                      return (
-                                        <div key={seatNum} style={{ display: "inline-block", flex: isBackRow ? "1" : "none", height: isBackRow ? "100%" : "auto" }}>
-                                          <Tooltip title={tooltipTitle}>
-                                            {seatElement}
-                                          </Tooltip>
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      };
-
-                      const maxRow = Math.max(...normalizedSeats.map(s => s.row ?? s.Row ?? 0), 0);
-                      const maxCol = Math.max(...normalizedSeats.map(s => s.column ?? s.Column ?? 0), 0);
-                      return renderSingleDeck(normalizedSeats, maxRow, maxCol, "#cbd5e1");
+                      switch (schemeName) {
+                        default:
+                          return <BusScheme53Seats seatsData={seatsData} selectedSeats={selectedSeats} onSeatClick={handleSeatClick} isAgent={true} />;
+                      }
                     })()}
                   </div>
                 </div>
 
-                {/* Right: Side operations pane */}
-                <div className={styles.sidePanel}>
-                  {/* Legend */}
-                  <div>
-                    <Text strong style={{ display: "block", marginBottom: 10 }}>Обозначения мест</Text>
-                    <Flex vertical gap={6}>
-                      <Flex align="center" gap={8}>
-                        <div className={`${styles.legendBox} ${styles.free}`}></div>
-                        <Text>Свободно</Text>
+                {/* Bottom: Legend/Summary on the left, Passenger details/Form on the right */}
+                <div style={{ display: "flex", gap: 24, alignItems: "flex-start", width: "100%" }}>
+                  {/* Left Column: Legend + Selection Summary */}
+                  <div style={{ width: "320px", background: "#f8fafc", padding: "16px 20px", borderRadius: 12, border: "1px solid #e2e8f0", display: "flex", flexDirection: "column", gap: 14 }}>
+                    <div>
+                      <Text strong style={{ display: "block", marginBottom: 10, fontSize: 14 }}>Обозначения мест</Text>
+                      <Flex vertical gap={6}>
+                        <Flex align="center" gap={8}>
+                          <div className={`${styles.legendBox} ${styles.free}`} style={{ width: 14, height: 14, borderRadius: 2 }}></div>
+                          <Text style={{ fontSize: 13 }}>Свободно</Text>
+                        </Flex>
+                        <Flex align="center" gap={8}>
+                          <div className={`${styles.legendBox} ${styles.reserved}`} style={{ width: 14, height: 14, borderRadius: 2 }}></div>
+                          <Text style={{ fontSize: 13 }}>Бронь (сессия)</Text>
+                        </Flex>
+                        <Flex align="center" gap={8}>
+                          <div className={`${styles.legendBox} ${styles.booked}`} style={{ width: 14, height: 14, borderRadius: 2 }}></div>
+                          <Text style={{ fontSize: 13 }}>Продано / Занято</Text>
+                        </Flex>
+                        <Flex align="center" gap={8}>
+                          <div className={`${styles.legendBox} ${styles.selected}`} style={{ width: 14, height: 14, borderRadius: 2 }}></div>
+                          <Text style={{ fontSize: 13 }}>Выбрано вами</Text>
+                        </Flex>
                       </Flex>
-                      <Flex align="center" gap={8}>
-                        <div className={`${styles.legendBox} ${styles.reserved}`}></div>
-                        <Text>Бронь (сессия)</Text>
-                      </Flex>
-                      <Flex align="center" gap={8}>
-                        <div className={`${styles.legendBox} ${styles.booked}`}></div>
-                        <Text>Продано / Занято</Text>
-                      </Flex>
-                      <Flex align="center" gap={8}>
-                        <div className={`${styles.legendBox} ${styles.selected}`}></div>
-                        <Text>Выбрано вами</Text>
-                      </Flex>
-                    </Flex>
+                    </div>
+
+                    {selectedSeats.length > 0 && (
+                      <>
+                        <hr style={{ border: "0.5px solid #e2e8f0", margin: "4px 0" }} />
+                        <div>
+                          <Title level={5} style={{ margin: "0 0 6px 0", fontSize: 14 }}>Выбрано мест: {selectedSeats.length}</Title>
+                          <Text style={{ display: "block", marginBottom: 6, fontSize: 13 }}>
+                            Номера: {selectedSeats.map(id => {
+                              const parts = String(id).split('_');
+                              const num = parts[0];
+                              const level = parts[1];
+                              const cleanNum = num === '0' ? '01' : (num === '00' ? '02' : num);
+                              const deckLabel = level ? (level === '2' ? ' (верх)' : ' (низ)') : '';
+                              return cleanNum + deckLabel;
+                            }).join(", ")}
+                          </Text>
+                          <Text strong style={{ display: "block", fontSize: 15, color: "#2563eb" }}>
+                            Итого к оплате: {selectedSeats.reduce((acc, num) => acc + (getSeatState(num).price || 0), 0)} KZT
+                          </Text>
+                        </div>
+                      </>
+                    )}
                   </div>
 
-                  <hr style={{ border: "0.5px solid #e2e8f0", margin: "4px 0" }} />
+                  {/* Right Column: Dynamic Form / Passenger details */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {selectedSeats.length === 0 ? (
+                      <Card style={{ background: "#f8fafc", textAlign: "center", padding: "32px 20px", border: "1px dashed #cbd5e1" }}>
+                        <Text type="secondary" style={{ fontSize: 13 }}>
+                          Выберите свободные места на схеме автобуса выше для оформления оффлайн-продажи билетов.
+                        </Text>
+                      </Card>
+                    ) : (() => {
+                      const firstSeatId = selectedSeats[0];
+                      const parts = String(firstSeatId).split('_');
+                      const sNum = parts[0];
+                      const sLvl = parts[1];
+                      const cleanNum = sNum === '0' ? '01' : (sNum === '00' ? '02' : sNum);
+                      const lvlLabel = sLvl ? (sLvl === '2' ? ' (верх)' : ' (низ)') : '';
+                      const displaySeatName = cleanNum + lvlLabel;
 
-                  {/* Dynamic details / Actions form */}
-                  {selectedSeats.length === 0 ? (
-                    <div style={{ textAlign: "center", padding: "20px 0" }}>
-                      <Text type="secondary">Выберите свободные места на схеме автобуса для оформления оффлайн-продажи.</Text>
-                    </div>
-                  ) : (() => {
-                    const firstSeatNum = selectedSeats[0];
-                    const seatInfo = seatsData.find(s => s.seatNumber === String(firstSeatNum));
-                    const isBooked = seatInfo && seatInfo.status === "Booked";
-                    const isReserved = seatInfo && seatInfo.status === "Reserved";
+                      const seatInfo = seatsData.find(s =>
+                        String(s.seatNumber || s.number || s.Number || "") === sNum &&
+                        (!sLvl || Number(s.level || s.Level || 1) === Number(sLvl))
+                      );
+                      const isBooked = seatInfo && seatInfo.status === "Booked";
+                      const isReserved = seatInfo && seatInfo.status === "Reserved";
 
-                    if (isBooked || isReserved) {
-                      const passenger = seatInfo?.passenger;
-                      const isManualSale = passenger && passenger.buyerEmail === "manual@beket.kz";
+                      if (isBooked || isReserved) {
+                        const passenger = seatInfo?.passenger;
+                        const isManualSale = passenger && passenger.buyerEmail === "manual@beket.kz";
 
-                      return (
-                        <div>
-                          <Title level={5} style={{ marginBottom: 12 }}>
-                            Место {firstSeatNum} ({isBooked ? "Продано" : "Зарезервировано"})
-                          </Title>
-
-                          <Card size="small" title="Информация о пассажире" style={{ background: "#fff", marginBottom: 16 }}>
+                        return (
+                          <Card title={`Информация о пассажире (Место ${displaySeatName})`} style={{ background: "#fff" }} size="small">
                             {passenger ? (
-                              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                              <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 13 }}>
                                 {!isManualSale && <div><Tag color="cyan" style={{ marginBottom: 4 }}>Онлайн покупка (Сайт)</Tag></div>}
                                 <div><Text type="secondary">ФИО:</Text> <strong>{passenger.lastName} {passenger.firstName} {passenger.middleName || ""}</strong></div>
                                 <div><Text type="secondary">Документ:</Text> {passenger.documentType === "passport" ? "Удостоверение" : passenger.documentType === "foreign_passport" ? "Паспорт" : passenger.documentType || "—"} №{passenger.documentNumber || "—"}</div>
@@ -668,71 +490,143 @@ export function SalesSection({
                                 {!isManualSale && <div><Text type="secondary">Email:</Text> {passenger.buyerEmail || "—"}</div>}
                                 {isManualSale && passenger.createdByName && <div><Text type="secondary">Продал:</Text> <Tag color="purple">Агент {passenger.createdByName}</Tag></div>}
                                 {isManualSale && !passenger.createdByName && <div><Text type="secondary">Продал:</Text> <Tag color="default">Касса / Агент</Tag></div>}
+
+                                {isManualSale && (
+                                  <Button
+                                    type="primary"
+                                    danger
+                                    block
+                                    style={{ marginTop: 12 }}
+                                    loading={cancelLoading}
+                                    onClick={() => handleCancelManualBooking(String(firstSeatId))}
+                                  >
+                                    Отменить продажу
+                                  </Button>
+                                )}
                               </div>
                             ) : (
                               <Text type="secondary">Данные пассажира отсутствуют.</Text>
                             )}
                           </Card>
+                        );
+                      }
 
-                          {isManualSale && (
-                            <Button
-                              type="primary"
-                              danger
-                              block
-                              loading={cancelLoading}
-                              onClick={() => handleCancelManualBooking(String(firstSeatNum))}
-                            >
-                              Отменить продажу
-                            </Button>
-                          )}
-                        </div>
+                      // If not booked/reserved (i.e. free seats are selected):
+                      return (
+                        <Card title={`Оформление оффлайн-продажи билетов (${selectedSeats.length === 1 ? `Место ${displaySeatName}` : `Мест: ${selectedSeats.length}`})`} style={{ background: "#fff" }} size="small">
+                          <Form form={passengerForm} layout="vertical" onFinish={handleManualBooking}>
+                            <Row gutter={12}>
+                              <Col span={8}>
+                                <Form.Item name="lastName" label="Фамилия" rules={[{ required: true, message: "Введите фамилию" }]} style={{ marginBottom: 12 }}>
+                                  <Input placeholder="Иванов" size="small" />
+                                </Form.Item>
+                              </Col>
+                              <Col span={8}>
+                                <Form.Item name="firstName" label="Имя" rules={[{ required: true, message: "Введите имя" }]} style={{ marginBottom: 12 }}>
+                                  <Input placeholder="Иван" size="small" />
+                                </Form.Item>
+                              </Col>
+                              <Col span={8}>
+                                <Form.Item name="middleName" label="Отчество" style={{ marginBottom: 12 }}>
+                                  <Input placeholder="Иванович" size="small" />
+                                </Form.Item>
+                              </Col>
+                            </Row>
+                            <Row gutter={12}>
+                              <Col span={8}>
+                                <Form.Item name="documentType" label="Тип документа" initialValue="passport" style={{ marginBottom: 12 }}>
+                                  <Select size="small">
+                                    <Select.Option value="passport">Удостоверение</Select.Option>
+                                    <Select.Option value="foreign_passport">Паспорт</Select.Option>
+                                  </Select>
+                                </Form.Item>
+                              </Col>
+                              <Col span={8}>
+                                <Form.Item name="documentNumber" label="Номер документа" rules={[{ required: true, message: "Введите номер документа" }]} style={{ marginBottom: 12 }}>
+                                  <Input placeholder="012345678" size="small" />
+                                </Form.Item>
+                              </Col>
+                              <Col span={8}>
+                                <Form.Item name="phoneNumber" label="Номер телефона" rules={[{ required: true, message: "Введите номер телефона" }]} style={{ marginBottom: 12 }}>
+                                  <Input placeholder="+7 (707) 123-45-67" size="small" />
+                                </Form.Item>
+                              </Col>
+                            </Row>
+                            <Row gutter={12}>
+                              <Col span={12}>
+                                <Form.Item name="iin" label="ИИН (12 цифр)" style={{ marginBottom: 16 }}>
+                                  <Input placeholder="123456789012" maxLength={12} size="small" />
+                                </Form.Item>
+                              </Col>
+                              <Col span={12} style={{ display: "flex", alignItems: "flex-end", paddingBottom: 16 }}>
+                                <Button type="primary" htmlType="submit" danger block loading={manualBookingLoading} icon={<CheckOutlined />} size="small" style={{ height: 32 }}>
+                                  Оформить продажу
+                                </Button>
+                              </Col>
+                            </Row>
+                          </Form>
+                        </Card>
                       );
                     }
 
-                    // If not booked/reserved (i.e. free seats are selected):
-                    return (
-                      <div>
-                        <Title level={5}>Выбрано мест: {selectedSeats.length}</Title>
-                        <Text style={{ display: "block", marginBottom: 6 }}>Номера: {selectedSeats.join(", ")}</Text>
-                        <Text strong style={{ display: "block", marginBottom: 12, fontSize: 15, color: "#2563eb" }}>
-                          Итого к оплате: {selectedSeats.reduce((acc, num) => acc + (getSeatState(num).price || 0), 0)} KZT
-                        </Text>
-
-                        {/* Manual sale form */}
-                        <Card size="small" title="Пассажирские данные" style={{ background: "#fff" }}>
-                          <Form form={passengerForm} layout="vertical" onFinish={handleManualBooking}>
-                            <Form.Item name="lastName" label="Фамилия" rules={[{ required: true, message: "Введите фамилию" }]}>
+                       // If not booked/reserved (i.e. free seats are selected):
+                       return (
+                    <Card title={`Оформление оффлайн-продажи билетов (${selectedSeats.length === 1 ? `Место ${selectedSeats[0]}` : `Мест: ${selectedSeats.length}`})`} style={{ background: "#fff" }} size="small">
+                      <Form form={passengerForm} layout="vertical" onFinish={handleManualBooking}>
+                        <Row gutter={12}>
+                          <Col span={8}>
+                            <Form.Item name="lastName" label="Фамилия" rules={[{ required: true, message: "Введите фамилию" }]} style={{ marginBottom: 12 }}>
                               <Input placeholder="Иванов" size="small" />
                             </Form.Item>
-                            <Form.Item name="firstName" label="Имя" rules={[{ required: true, message: "Введите имя" }]}>
+                          </Col>
+                          <Col span={8}>
+                            <Form.Item name="firstName" label="Имя" rules={[{ required: true, message: "Введите имя" }]} style={{ marginBottom: 12 }}>
                               <Input placeholder="Иван" size="small" />
                             </Form.Item>
-                            <Form.Item name="middleName" label="Отчество">
+                          </Col>
+                          <Col span={8}>
+                            <Form.Item name="middleName" label="Отчество" style={{ marginBottom: 12 }}>
                               <Input placeholder="Иванович" size="small" />
                             </Form.Item>
-                            <Form.Item name="documentType" label="Тип документа" initialValue="passport">
+                          </Col>
+                        </Row>
+                        <Row gutter={12}>
+                          <Col span={8}>
+                            <Form.Item name="documentType" label="Тип документа" initialValue="passport" style={{ marginBottom: 12 }}>
                               <Select size="small">
                                 <Select.Option value="passport">Удостоверение</Select.Option>
                                 <Select.Option value="foreign_passport">Паспорт</Select.Option>
                               </Select>
                             </Form.Item>
-                            <Form.Item name="documentNumber" label="Номер документа" rules={[{ required: true, message: "Введите номер документа" }]}>
+                          </Col>
+                          <Col span={8}>
+                            <Form.Item name="documentNumber" label="Номер документа" rules={[{ required: true, message: "Введите номер документа" }]} style={{ marginBottom: 12 }}>
                               <Input placeholder="012345678" size="small" />
                             </Form.Item>
-                            <Form.Item name="phoneNumber" label="Номер телефона" rules={[{ required: true, message: "Введите номер телефона" }]}>
+                          </Col>
+                          <Col span={8}>
+                            <Form.Item name="phoneNumber" label="Номер телефона" rules={[{ required: true, message: "Введите номер телефона" }]} style={{ marginBottom: 12 }}>
                               <Input placeholder="+7 (707) 123-45-67" size="small" />
                             </Form.Item>
-                            <Form.Item name="iin" label="ИИН (12 цифр)">
+                          </Col>
+                        </Row>
+                        <Row gutter={12}>
+                          <Col span={12}>
+                            <Form.Item name="iin" label="ИИН (12 цифр)" style={{ marginBottom: 16 }}>
                               <Input placeholder="123456789012" maxLength={12} size="small" />
                             </Form.Item>
-                            <Button type="primary" htmlType="submit" danger block loading={manualBookingLoading} icon={<CheckOutlined />}>
+                          </Col>
+                          <Col span={12} style={{ display: "flex", alignItems: "flex-end", paddingBottom: 16 }}>
+                            <Button type="primary" htmlType="submit" danger block loading={manualBookingLoading} icon={<CheckOutlined />} size="small" style={{ height: 32 }}>
                               Оформить продажу
                             </Button>
-                          </Form>
-                        </Card>
-                      </div>
+                          </Col>
+                        </Row>
+                      </Form>
+                    </Card>
                     );
-                  })()}
+                     })()}
+                  </div>
                 </div>
               </div>
             ) : (

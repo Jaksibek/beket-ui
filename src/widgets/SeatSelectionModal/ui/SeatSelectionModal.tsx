@@ -144,11 +144,16 @@ export const SeatSelectionModal = memo((props: SeatSelectionModalProps) => {
     const getSeatDisplayName = (val: string | number) => {
         const seat = seatsData.find(s => s.id === val || String(s.number) === String(val));
         if (!seat) return val;
+        
+        let displayName = seat.number || String(val);
+        if (displayName === '0') displayName = '01';
+        if (displayName === '00') displayName = '02';
+
         if (isSleeper) {
             const lvlName = seat.level === 2 ? t('Upper') : t('Lower');
-            return `${seat.number} (${lvlName})`;
+            return `${displayName} (${lvlName})`;
         }
-        return seat.number || val;
+        return displayName;
     };
 
     const readableSelectedSeats = selectedSeats.map(getSeatDisplayName);

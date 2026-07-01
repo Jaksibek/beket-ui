@@ -8,11 +8,12 @@ interface Props {
     seatsData: ISeat[];
     selectedSeats: (string | number)[];
     onSeatClick: (num: string | number) => void;
+    isAgent?: boolean;
 }
 
 // Dynamic premium bus scheme layout mapping coordinates
 
-export const BusScheme53Seats = memo(({ seatsData, selectedSeats, onSeatClick }: Props) => {
+export const BusScheme53Seats = memo(({ seatsData, selectedSeats, onSeatClick, isAgent }: Props) => {
     if (!seatsData || seatsData.length === 0) return null;
 
     const maxRow = Math.max(...seatsData.map(s => s.row ?? 0), 0);
@@ -33,13 +34,17 @@ export const BusScheme53Seats = memo(({ seatsData, selectedSeats, onSeatClick }:
     // Helper to determine the actual seat state based on API data
     const getSeatProps = (apiSeat: any) => {
         let status: SeatStatus = 'available';
-        const seatNum = apiSeat.number || apiSeat.Number || '';
+        const seatNum = apiSeat.number || apiSeat.Number || apiSeat.seatNumber || '';
         const isSelected = selectedSeats.some(s => String(s) === String(seatNum));
 
-        if (apiSeat.status === 'Booked' || apiSeat.status === 'Reserved' || apiSeat.Status === 'Booked' || apiSeat.Status === 'Reserved') {
-            status = 'booked';
-        } else if (isSelected) {
+        const apiStatus = apiSeat.status || apiSeat.Status;
+
+        if (isSelected) {
             status = 'selected';
+        } else if (apiStatus === 'Booked') {
+            status = 'booked';
+        } else if (apiStatus === 'Reserved') {
+            status = isAgent ? 'reserved' : 'booked';
         }
 
         return { status };
@@ -74,9 +79,10 @@ export const BusScheme53Seats = memo(({ seatsData, selectedSeats, onSeatClick }:
                             }
 
                             // It's a Seat Number
-                            const seatNum = cell.number || cell.Number || '';
+                            const seatNum = cell.number || cell.Number || cell.seatNumber || '';
                             const { status } = getSeatProps(cell);
                             const isVip = cell.type?.toUpperCase() === 'VIP' || cell.Type?.toUpperCase() === 'VIP';
+                            const price = cell.price || cell.Price || 0;
 
                             return (
                                 <Seat
@@ -84,11 +90,16 @@ export const BusScheme53Seats = memo(({ seatsData, selectedSeats, onSeatClick }:
                                     seatNumber={seatNum}
                                     status={status}
                                     isVip={isVip}
-                                    style={isVip && status === 'available' ? {
-                                        background: 'linear-gradient(135deg, #eab308 0%, #ca8a04 100%)',
-                                        borderColor: '#ca8a04',
-                                        color: '#fff'
-                                    } : {}}
+                                    disabled={isAgent ? false : undefined}
+                                    price={isAgent && price > 0 ? price : undefined}
+                                    style={{
+                                        cursor: isAgent ? 'pointer' : undefined,
+                                        ...(isVip && status === 'available' ? {
+                                            background: 'linear-gradient(135deg, #eab308 0%, #ca8a04 100%)',
+                                            borderColor: '#ca8a04',
+                                            color: '#fff'
+                                        } : {})
+                                    }}
                                     onClick={() => onSeatClick(seatNum)}
                                 />
                             );

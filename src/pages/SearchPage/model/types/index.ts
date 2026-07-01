@@ -35,6 +35,7 @@ export type SeatTypeCodeEnum = "1" | "2";
 export interface ISeat {
   id: string;
   number: string | null;
+  displayName?: string;
   row: number;
   column: number;
   status: 'Free' | 'Reserved' | 'Booked';

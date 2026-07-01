@@ -4,7 +4,7 @@ import styles from './Seat.module.scss';
 
 const { Text } = Typography;
 
-export type SeatStatus = 'available' | 'booked' | 'selected';
+export type SeatStatus = 'available' | 'booked' | 'selected' | 'reserved';
 
 interface SeatProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onClick'> {
     seatNumber: string | number;
@@ -14,13 +14,17 @@ interface SeatProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onClick'
     style?: React.CSSProperties;
     onClick: (seatNumber: string | number) => void;
     children?: React.ReactNode;
+    disabled?: boolean;
+    price?: number;
 }
 
 export const Seat = memo((props: SeatProps) => {
-    const { seatNumber, status, isAisle, style, onClick, children, ...rest } = props;
+    const { seatNumber, status, isAisle, style, onClick, children, disabled, price, ...rest } = props;
+
+    const isSeatDisabled = disabled ?? (status === 'booked');
 
     const handleClick = () => {
-        if (status !== 'booked') {
+        if (!isSeatDisabled) {
             onClick(seatNumber);
         }
     };
@@ -28,6 +32,8 @@ export const Seat = memo((props: SeatProps) => {
     let statusClass = styles.available;
     if (status === 'booked') {
         statusClass = styles.booked;
+    } else if (status === 'reserved') {
+        statusClass = styles.reserved;
     } else if (status === 'selected') {
         statusClass = styles.selected;
     } else if (isAisle) {
@@ -41,7 +47,20 @@ export const Seat = memo((props: SeatProps) => {
             style={style}
             {...rest}
         >
-            <Text className={styles.seatNumber} style={style?.color ? { color: style.color } : undefined}>{seatNumber}</Text>
+            {price && price > 0 ? (
+                <div className={styles.seatContent}>
+                    <span className={styles.seatNumberWithPrice} style={style?.color ? { color: style.color } : undefined}>
+                        {seatNumber}
+                    </span>
+                    <span className={styles.price} style={style?.color ? { color: style.color } : undefined}>
+                        {price}
+                    </span>
+                </div>
+            ) : (
+                <Text className={styles.seatNumber} style={style?.color ? { color: style.color } : undefined}>
+                    {seatNumber}
+                </Text>
+            )}
             {children}
         </div>
     );

@@ -7,39 +7,18 @@ import { SeatStatus } from "@/shared/ui/Seat/Seat.type";
 import { Yutong40LayoutTemplate } from "./templates/Yutong40LayoutTemplate";
 import styles from "./BusScheme.module.scss";
 
-interface BusSchemeSleeperYutong40Props {
+interface AgentSchemeSleeperYutong40Props {
     seatsData: ISeat[];
     selectedSeats: (string | number)[];
-    onSeatClick: (seatId: string) => void;
+    onSeatClick: (seatNum: string | number) => void;
 }
 
-export const BusSchemeSleeperYutong40 = memo(({
+export const AgentSchemeSleeperYutong40 = memo(({
     seatsData,
     selectedSeats,
     onSeatClick
-}: BusSchemeSleeperYutong40Props) => {
+}: AgentSchemeSleeperYutong40Props) => {
     const { t } = useTranslation();
-
-    const getSeatProps = (apiSeat: ISeat) => {
-        let status: SeatStatus = 'available';
-        const seatId = apiSeat.id || '';
-        const seatNum = apiSeat.number || apiSeat.seatNumber || '';
-        const isSelected = selectedSeats.some(
-            s => String(s).trim() === String(seatId).trim()
-        );
-
-        const apiStatus = apiSeat.status || apiSeat.Status;
-
-        if (isSelected) {
-            status = 'selected';
-        } else if (apiStatus === 'Booked') {
-            status = 'booked';
-        } else if (apiStatus === 'Reserved') {
-            status = 'booked'; // Passengers see reserved as booked
-        }
-
-        return { status, seatNum };
-    };
 
     const renderSeat = (
         cell: ISeat,
@@ -47,18 +26,40 @@ export const BusSchemeSleeperYutong40 = memo(({
         isBackRow: boolean,
         levelBorderColor: string
     ) => {
-        const { status, seatNum } = getSeatProps(cell);
+        // Use the normalized displayName from the template (e.g. "01", "02", "3" etc.)
+        // Fall back to raw number if displayName is not set
+        const rawNum = cell.number || (cell as any).seatNumber || '';
+        const displayName = cell.displayName || rawNum;
+        const level = cell.level ?? (cell as any).Level ?? 1;
 
-        let customStyle: React.CSSProperties = {};
+        // Selection key uses displayName to match what is shown on screen
+        const selectionKey = `${displayName}_${level}`;
+
+        const apiStatus = cell.status || (cell as any).Status;
+        const isSelected = selectedSeats.some(s => String(s).trim() === selectionKey);
+
+        let status: SeatStatus = 'available';
+        if (isSelected) {
+            status = 'selected';
+        } else if (apiStatus === 'Booked') {
+            status = 'booked';
+        } else if (apiStatus === 'Reserved') {
+            status = 'reserved';
+        }
+
+        const price = cell.price || (cell as any).Price || 0;
+
+        let customStyle: React.CSSProperties = {
+            borderColor: levelBorderColor,
+            borderWidth: '2px',
+            borderStyle: 'solid'
+        };
 
         if (status === 'available') {
-            if (isUpper) {
-                customStyle.background = 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)';
-                customStyle.color = '#fff';
-            } else {
-                customStyle.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
-                customStyle.color = '#fff';
-            }
+            customStyle.background = isUpper
+                ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'
+                : 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
+            customStyle.color = '#fff';
         } else if (status === 'selected') {
             customStyle.background = 'linear-gradient(135deg, #eab308 0%, #ca8a04 100%)';
             customStyle.color = '#fff';
@@ -66,18 +67,24 @@ export const BusSchemeSleeperYutong40 = memo(({
         } else if (status === 'booked') {
             customStyle.background = '#e2e8f0';
             customStyle.color = '#94a3b8';
+        } else if (status === 'reserved') {
+            customStyle.background = '#ffedd5';
+            customStyle.color = '#ea580c';
         }
 
         const tooltipTitle = isUpper ? t('Upper') : t('Lower');
 
         return (
-            <Tooltip key={cell.id} title={tooltipTitle}>
+            <Tooltip key={selectionKey} title={tooltipTitle}>
                 <div style={{ display: 'inline-block', flex: isBackRow ? '1' : 'none', height: isBackRow ? '100%' : 'auto' }}>
                     <Seat
-                        seatNumber={cell.displayName || seatNum}
+                        seatNumber={displayName}
                         status={status}
+                        disabled={false}
+                        price={price > 0 ? price : undefined}
                         style={{
                             ...customStyle,
+                            cursor: 'pointer',
                             position: 'relative',
                             width: '64px',
                             height: isBackRow ? '100%' : '32px',
@@ -85,12 +92,12 @@ export const BusSchemeSleeperYutong40 = memo(({
                             fontSize: '11px',
                             fontWeight: 'bold'
                         }}
-                        onClick={() => onSeatClick(cell.id)}
+                        onClick={() => onSeatClick(selectionKey)}
                     >
-                        <span 
-                            className={styles.bunkBadge} 
-                            style={{ 
-                                color: '#fff' 
+                        <span
+                            className={styles.bunkBadge}
+                            style={{
+                                color: status === 'available' || status === 'selected' ? '#fff' : levelBorderColor
                             }}
                         >
                             {isUpper ? '↑' : '↓'}

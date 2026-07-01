@@ -230,26 +230,32 @@ export function BusConfigSection() {
         let numStr = String(s.seatNumber || s.Number || s.seatNo || s.SeatNo || s.number || "");
         let level = s.level ?? s.Level ?? 1;
 
-        if (row === 1) {
-          if (numStr === "00" && level === 2) {
+        const rowNum = Number(row);
+        const lvlNum = Number(level);
+
+        if (rowNum === 1) {
+          const isZeroOrOne = numStr === "0" || numStr === "01" || numStr === "1";
+          const isDoubleZeroOrTwo = numStr === "00" || numStr === "02" || numStr === "2";
+
+          if (isDoubleZeroOrTwo && lvlNum === 2) {
             numStr = "02";
             row = 1;
             col = 1;
-          } else if (numStr === "00" && level === 1) {
+          } else if (isDoubleZeroOrTwo && lvlNum === 1) {
             numStr = "02";
             row = 2;
             col = 1;
-          } else if (numStr === "0" && level === 2) {
+          } else if (isZeroOrOne && lvlNum === 2) {
             numStr = "01";
             row = 1;
             col = 0;
-          } else if (numStr === "0" && level === 1) {
+          } else if (isZeroOrOne && lvlNum === 1) {
             numStr = "01";
             row = 2;
             col = 0;
           }
-        } else if (row >= 2) {
-          row = row + 1;
+        } else if (rowNum >= 2) {
+          row = rowNum + 1;
         }
 
         const isBack = s.isLastSeat || s.IsLastSeat;
