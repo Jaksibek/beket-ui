@@ -1,9 +1,9 @@
 import React, { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { Tooltip } from "antd";
-import { ISeat } from "@/pages/SearchPage/model/types";
+import type { ISeat } from "@/pages/SearchPage/model/types";
 import { Seat } from "@/shared/ui/Seat/Seat";
-import { SeatStatus } from "@/shared/ui/Seat/Seat.type";
+import type { SeatStatus } from "@/shared/ui/Seat";
 import { Yutong36LayoutTemplate } from "./templates/Yutong36LayoutTemplate";
 import styles from "./BusScheme.module.scss";
 
@@ -23,12 +23,12 @@ export const BusSchemeSleeperYutong36 = memo(({
     const getSeatProps = (apiSeat: ISeat) => {
         let status: SeatStatus = 'available';
         const seatId = apiSeat.id || '';
-        const seatNum = apiSeat.number || apiSeat.seatNumber || '';
+        const seatNum = apiSeat.number || (apiSeat as any).seatNumber || '';
         const isSelected = selectedSeats.some(
             s => String(s).trim() === String(seatId).trim()
         );
 
-        const apiStatus = apiSeat.status || apiSeat.Status;
+        const apiStatus = apiSeat.status || (apiSeat as any).Status;
 
         if (isSelected) {
             status = 'selected';
@@ -45,7 +45,7 @@ export const BusSchemeSleeperYutong36 = memo(({
         cell: ISeat,
         isUpper: boolean,
         isBackRow: boolean,
-        levelBorderColor: string
+        _levelBorderColor: string
     ) => {
         const { status, seatNum } = getSeatProps(cell);
 

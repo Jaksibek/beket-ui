@@ -182,6 +182,18 @@ export const SeatSelectionModal = memo((props: SeatSelectionModalProps) => {
                     <div className={styles.legendWrapper}>
                         <Text strong className={styles.legendTitle}>{t('Class ZL')} — {trip.price} ₸</Text>
                         <Flex gap={24} className={styles.legend}>
+                            {isSleeper && (
+                                <>
+                                    <Flex align="center" gap={8} className={styles.legendItem}>
+                                        <div style={{ width: 14, height: 14, borderRadius: 2, background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' }}></div>
+                                        <Text>Нижние места</Text>
+                                    </Flex>
+                                    <Flex align="center" gap={8} className={styles.legendItem}>
+                                        <div style={{ width: 14, height: 14, borderRadius: 2, background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' }}></div>
+                                        <Text>Верхние места</Text>
+                                    </Flex>
+                                </>
+                            )}
                             <Flex align="center" gap={8} className={`${styles.legendItem} ${styles.booked}`}>
                                 <div className={`${styles.legendBox}`}></div>
                                 <Text>{t('Booked')}</Text>

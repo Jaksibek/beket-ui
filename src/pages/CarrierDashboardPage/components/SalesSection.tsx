@@ -1,4 +1,4 @@
-import { Button, Card, Flex, Spin, Table, Tag, Typography, Form, Input, Select, Dropdown, Tooltip, Row, Col } from "antd";
+import { Button, Card, Flex, Spin, Table, Tag, Typography, Form, Input, Select, Dropdown, Row, Col } from "antd";
 import {
   ShoppingCartOutlined,
   TeamOutlined,
@@ -79,8 +79,24 @@ export function SalesSection({
 }: SalesSectionProps) {
 
   // Helper getters
-  const getSeatState = (seatNum: number) => {
-    const s = seatsData.find(x => (x.number || x.Number || x.seatNumber) === String(seatNum));
+  const getSeatState = (seatNum: string | number) => {
+    const numStr = String(seatNum);
+    let sNum = numStr;
+    let sLvl: number | null = null;
+    if (numStr.includes('_')) {
+      const parts = numStr.split('_');
+      sNum = parts[0];
+      sLvl = Number(parts[1]);
+    }
+
+    const rawMatchNum = sNum === '01' ? '0' : sNum === '02' ? '00' : sNum;
+
+    const s = seatsData.find(x => {
+      const apiNum = String(x.number || x.Number || x.seatNumber || '');
+      const apiLvl = Number(x.level || x.Level || 1);
+      return apiNum === rawMatchNum && (sLvl === null || apiLvl === sLvl);
+    });
+
     if (!s) return { status: "free", price: 0, passenger: null };
 
     const isSelected = selectedSeats.includes(seatNum);
@@ -408,20 +424,24 @@ export function SalesSection({
                       <Text strong style={{ display: "block", marginBottom: 10, fontSize: 14 }}>Обозначения мест</Text>
                       <Flex vertical gap={6}>
                         <Flex align="center" gap={8}>
-                          <div className={`${styles.legendBox} ${styles.free}`} style={{ width: 14, height: 14, borderRadius: 2 }}></div>
-                          <Text style={{ fontSize: 13 }}>Свободно</Text>
+                          <div style={{ width: 14, height: 14, borderRadius: 2, background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)' }}></div>
+                          <Text style={{ fontSize: 13 }}>Нижние места</Text>
                         </Flex>
                         <Flex align="center" gap={8}>
-                          <div className={`${styles.legendBox} ${styles.reserved}`} style={{ width: 14, height: 14, borderRadius: 2 }}></div>
+                          <div style={{ width: 14, height: 14, borderRadius: 2, background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' }}></div>
+                          <Text style={{ fontSize: 13 }}>Верхние места</Text>
+                        </Flex>
+                        <Flex align="center" gap={8}>
+                          <div style={{ width: 14, height: 14, borderRadius: 2, background: 'linear-gradient(135deg, #eab308 0%, #ca8a04 100%)', boxShadow: '0 0 4px #eab308' }}></div>
+                          <Text style={{ fontSize: 13 }}>Выбрано вами</Text>
+                        </Flex>
+                        <Flex align="center" gap={8}>
+                          <div style={{ width: 14, height: 14, borderRadius: 2, background: '#ffedd5', border: '1px solid #ea580c' }}></div>
                           <Text style={{ fontSize: 13 }}>Бронь (сессия)</Text>
                         </Flex>
                         <Flex align="center" gap={8}>
-                          <div className={`${styles.legendBox} ${styles.booked}`} style={{ width: 14, height: 14, borderRadius: 2 }}></div>
+                          <div style={{ width: 14, height: 14, borderRadius: 2, background: '#e2e8f0', border: '1px solid #cbd5e1' }}></div>
                           <Text style={{ fontSize: 13 }}>Продано / Занято</Text>
-                        </Flex>
-                        <Flex align="center" gap={8}>
-                          <div className={`${styles.legendBox} ${styles.selected}`} style={{ width: 14, height: 14, borderRadius: 2 }}></div>
-                          <Text style={{ fontSize: 13 }}>Выбрано вами</Text>
                         </Flex>
                       </Flex>
                     </div>
@@ -559,7 +579,7 @@ export function SalesSection({
                                 </Form.Item>
                               </Col>
                               <Col span={12} style={{ display: "flex", alignItems: "flex-end", paddingBottom: 16 }}>
-                                <Button type="primary" htmlType="submit" danger block loading={manualBookingLoading} icon={<CheckOutlined />} size="small" style={{ height: 32 }}>
+                                <Button type="primary" htmlType="submit" block loading={manualBookingLoading} icon={<CheckOutlined />} size="small" style={{ height: 32 }}>
                                   Оформить продажу
                                 </Button>
                               </Col>
@@ -567,65 +587,7 @@ export function SalesSection({
                           </Form>
                         </Card>
                       );
-                    }
-
-                       // If not booked/reserved (i.e. free seats are selected):
-                       return (
-                    <Card title={`Оформление оффлайн-продажи билетов (${selectedSeats.length === 1 ? `Место ${selectedSeats[0]}` : `Мест: ${selectedSeats.length}`})`} style={{ background: "#fff" }} size="small">
-                      <Form form={passengerForm} layout="vertical" onFinish={handleManualBooking}>
-                        <Row gutter={12}>
-                          <Col span={8}>
-                            <Form.Item name="lastName" label="Фамилия" rules={[{ required: true, message: "Введите фамилию" }]} style={{ marginBottom: 12 }}>
-                              <Input placeholder="Иванов" size="small" />
-                            </Form.Item>
-                          </Col>
-                          <Col span={8}>
-                            <Form.Item name="firstName" label="Имя" rules={[{ required: true, message: "Введите имя" }]} style={{ marginBottom: 12 }}>
-                              <Input placeholder="Иван" size="small" />
-                            </Form.Item>
-                          </Col>
-                          <Col span={8}>
-                            <Form.Item name="middleName" label="Отчество" style={{ marginBottom: 12 }}>
-                              <Input placeholder="Иванович" size="small" />
-                            </Form.Item>
-                          </Col>
-                        </Row>
-                        <Row gutter={12}>
-                          <Col span={8}>
-                            <Form.Item name="documentType" label="Тип документа" initialValue="passport" style={{ marginBottom: 12 }}>
-                              <Select size="small">
-                                <Select.Option value="passport">Удостоверение</Select.Option>
-                                <Select.Option value="foreign_passport">Паспорт</Select.Option>
-                              </Select>
-                            </Form.Item>
-                          </Col>
-                          <Col span={8}>
-                            <Form.Item name="documentNumber" label="Номер документа" rules={[{ required: true, message: "Введите номер документа" }]} style={{ marginBottom: 12 }}>
-                              <Input placeholder="012345678" size="small" />
-                            </Form.Item>
-                          </Col>
-                          <Col span={8}>
-                            <Form.Item name="phoneNumber" label="Номер телефона" rules={[{ required: true, message: "Введите номер телефона" }]} style={{ marginBottom: 12 }}>
-                              <Input placeholder="+7 (707) 123-45-67" size="small" />
-                            </Form.Item>
-                          </Col>
-                        </Row>
-                        <Row gutter={12}>
-                          <Col span={12}>
-                            <Form.Item name="iin" label="ИИН (12 цифр)" style={{ marginBottom: 16 }}>
-                              <Input placeholder="123456789012" maxLength={12} size="small" />
-                            </Form.Item>
-                          </Col>
-                          <Col span={12} style={{ display: "flex", alignItems: "flex-end", paddingBottom: 16 }}>
-                            <Button type="primary" htmlType="submit" danger block loading={manualBookingLoading} icon={<CheckOutlined />} size="small" style={{ height: 32 }}>
-                              Оформить продажу
-                            </Button>
-                          </Col>
-                        </Row>
-                      </Form>
-                    </Card>
-                    );
-                     })()}
+                    })()}
                   </div>
                 </div>
               </div>

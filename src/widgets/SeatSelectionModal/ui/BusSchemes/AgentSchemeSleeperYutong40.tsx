@@ -1,9 +1,9 @@
 import React, { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { Tooltip } from "antd";
-import { ISeat } from "@/pages/SearchPage/model/types";
+import type { ISeat } from "@/pages/SearchPage/model/types";
 import { Seat } from "@/shared/ui/Seat/Seat";
-import { SeatStatus } from "@/shared/ui/Seat/Seat.type";
+import type { SeatStatus } from "@/shared/ui/Seat";
 import { Yutong40LayoutTemplate } from "./templates/Yutong40LayoutTemplate";
 import styles from "./BusScheme.module.scss";
 

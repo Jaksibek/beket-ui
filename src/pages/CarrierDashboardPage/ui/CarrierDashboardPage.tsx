@@ -638,13 +638,6 @@ function CarrierDashboardPage() {
 
   const handleSeatClick = (seatIdOrNum: string | number) => {
     const idStr = String(seatIdOrNum);
-    let searchNum = idStr;
-    let searchLvl: number | null = null;
-    if (idStr.includes('_')) {
-      const parts = idStr.split('_');
-      searchNum = parts[0];
-      searchLvl = Number(parts[1]);
-    }
 
     const findSeat = (target: string | number) => {
       const tStr = String(target);
@@ -686,6 +679,10 @@ function CarrierDashboardPage() {
       if (freePrev.some(x => String(x) === idStr)) {
         next = freePrev.filter(x => String(x) !== idStr);
       } else {
+        if (!isSeatModalOpen && freePrev.length >= 4) {
+          message.warning("Вы не можете выбрать более 4 мест одновременно.");
+          return prev;
+        }
         next = [...freePrev, seatIdOrNum];
       }
 
@@ -710,6 +707,8 @@ function CarrierDashboardPage() {
         }))
       });
       message.success("Цены успешно обновлены");
+      setSelectedSeats([]);
+      setIndividualPrice(null);
       fetchTripSeats(selectedTrip.id);
     } catch (e) {
       console.error(e);

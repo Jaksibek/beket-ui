@@ -1,5 +1,5 @@
 import React, { memo } from "react";
-import { ISeat } from "@/pages/SearchPage/model/types";
+import type { ISeat } from "@/pages/SearchPage/model/types";
 import styles from "../BusScheme.module.scss";
 
 export interface Yutong36TemplateProps {
@@ -16,7 +16,7 @@ export const Yutong36LayoutTemplate = memo(({ seatsData, renderSeat }: Yutong36T
     const normalizeSleeperSeats = (seats: ISeat[]) => {
         // Filter out seats 17 and 18 for Yutong 36 scheme
         const filteredSeats = seats.filter(s => {
-            const num = Number(s.number || s.seatNumber || 0);
+            const num = Number(s.number || (s as any).seatNumber || 0);
             return num !== 17 && num !== 18;
         });
 
@@ -25,7 +25,7 @@ export const Yutong36LayoutTemplate = memo(({ seatsData, renderSeat }: Yutong36T
             let col = s.column ?? (s as any).Column ?? 0;
             let level = s.level ?? (s as any).Level ?? 1;
 
-            const rawNum = s.number ?? (s as any).Number ?? s.seatNumber ?? (s as any).SeatNumber ?? (s as any).seatNo ?? (s as any).SeatNo ?? "";
+            const rawNum = s.number ?? (s as any).Number ?? (s as any).seatNumber ?? (s as any).SeatNumber ?? (s as any).seatNo ?? (s as any).SeatNo ?? "";
             let numStr = String(rawNum).trim();
             if (numStr === "null" || numStr === "undefined") numStr = "";
             let displayName = numStr;
@@ -106,7 +106,7 @@ export const Yutong36LayoutTemplate = memo(({ seatsData, renderSeat }: Yutong36T
             isWindow: false,
             type: "door",
             number: ""
-        });
+        } as any);
 
         return mapped;
     };
@@ -141,7 +141,7 @@ export const Yutong36LayoutTemplate = memo(({ seatsData, renderSeat }: Yutong36T
                 {[...grid].reverse().map((rowCells, rIdx) => {
                     const isBackRow = rowCells.some(cell => {
                         if (!cell) return false;
-                        const num = Number(cell.number || cell.seatNumber || 0);
+                        const num = Number(cell.number || (cell as any).seatNumber || 0);
                         return cell.isLastSeat || (cell as any).IsLastSeat || num >= 13;
                     });
 
@@ -172,7 +172,7 @@ export const Yutong36LayoutTemplate = memo(({ seatsData, renderSeat }: Yutong36T
                                 if (code === 'door') {
                                     return <div key={`door-${rIdx}-${cIdx}`} className={styles.facility} style={{ background: '#15803d', borderColor: '#166534', color: '#fff' }}>EXIT</div>;
                                 }
-                                if (code === 'toilet') {
+                                if (code === 'wc') {
                                     return <div key={`wc-${rIdx}-${cIdx}`} className={styles.facility} style={{ background: '#7f1d1d', borderColor: '#991b1b', color: '#fca5a5' }}>WC</div>;
                                 }
 

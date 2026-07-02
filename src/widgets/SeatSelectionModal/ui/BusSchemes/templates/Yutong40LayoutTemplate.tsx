@@ -1,5 +1,5 @@
 import React, { memo } from "react";
-import { ISeat } from "@/pages/SearchPage/model/types";
+import type { ISeat } from "@/pages/SearchPage/model/types";
 import styles from "../BusScheme.module.scss";
 
 export interface Yutong40TemplateProps {
@@ -14,12 +14,21 @@ export interface Yutong40TemplateProps {
 
 export const Yutong40LayoutTemplate = memo(({ seatsData, renderSeat }: Yutong40TemplateProps) => {
     const normalizeSleeperSeats = (seats: ISeat[]) => {
+        // DEBUG: log raw seats for row=1 to diagnose 01/02 numbering
+        const row1seats = seats.filter(s => {
+            const r = s.row ?? (s as any).Row ?? (s as any).row;
+            return Number(r) === 1;
+        });
+        if (row1seats.length > 0) {
+            console.log('[Yutong40] Raw row=1 seats:', JSON.stringify(row1seats, null, 2));
+        }
+
         let mapped = seats.map(s => {
             let row = s.row ?? (s as any).Row ?? 0;
             let col = s.column ?? (s as any).Column ?? 0;
             let level = s.level ?? (s as any).Level ?? 1;
 
-            const rawNum = s.number ?? (s as any).Number ?? s.seatNumber ?? (s as any).SeatNumber ?? (s as any).seatNo ?? (s as any).SeatNo ?? "";
+            const rawNum = s.number ?? (s as any).Number ?? (s as any).seatNumber ?? (s as any).SeatNumber ?? (s as any).seatNo ?? (s as any).SeatNo ?? "";
             let numStr = String(rawNum).trim();
             if (numStr === "null" || numStr === "undefined") numStr = "";
             let displayName = numStr;
@@ -30,6 +39,8 @@ export const Yutong40LayoutTemplate = memo(({ seatsData, renderSeat }: Yutong40T
             if (rowNum === 1) {
                 const isZeroOrOne = numStr === "0" || numStr === "01" || numStr === "1";
                 const isDoubleZeroOrTwo = numStr === "00" || numStr === "02" || numStr === "2";
+
+                console.log(`[Yutong40] row=1 seat: numStr="${numStr}", lvlNum=${lvlNum}, isZeroOrOne=${isZeroOrOne}, isDoubleZeroOrTwo=${isDoubleZeroOrTwo}`);
 
                 if (isDoubleZeroOrTwo && lvlNum === 2) {
                     displayName = "02";
@@ -48,6 +59,8 @@ export const Yutong40LayoutTemplate = memo(({ seatsData, renderSeat }: Yutong40T
                     row = 2;
                     col = 0;
                 }
+
+                console.log(`[Yutong40] → displayName="${displayName}"`);
             } else if (rowNum >= 2) {
                 row = rowNum + 1;
             }
@@ -100,7 +113,7 @@ export const Yutong40LayoutTemplate = memo(({ seatsData, renderSeat }: Yutong40T
             isWindow: false,
             type: "door",
             number: ""
-        });
+        } as any);
 
         return mapped;
     };
@@ -135,7 +148,7 @@ export const Yutong40LayoutTemplate = memo(({ seatsData, renderSeat }: Yutong40T
                 {[...grid].reverse().map((rowCells, rIdx) => {
                     const isBackRow = rowCells.some(cell => {
                         if (!cell) return false;
-                        const num = Number(cell.number || cell.seatNumber || 0);
+                        const num = Number(cell.number || (cell as any).seatNumber || 0);
                         return cell.isLastSeat || (cell as any).IsLastSeat || (num >= 15 && num <= 18);
                     });
 
@@ -166,7 +179,7 @@ export const Yutong40LayoutTemplate = memo(({ seatsData, renderSeat }: Yutong40T
                                 if (code === 'door') {
                                     return <div key={`door-${rIdx}-${cIdx}`} className={styles.facility} style={{ background: '#15803d', borderColor: '#166534', color: '#fff' }}>EXIT</div>;
                                 }
-                                if (code === 'toilet') {
+                                if (code === 'wc') {
                                     return <div key={`wc-${rIdx}-${cIdx}`} className={styles.facility} style={{ background: '#7f1d1d', borderColor: '#991b1b', color: '#fca5a5' }}>WC</div>;
                                 }
 
