@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Button, Card, Flex, Switch, Table, Tag, Typography, Input } from "antd";
+import { Button, Card, Flex, Switch, Table, Tag, Typography, Input, Popconfirm } from "antd";
 import { EditOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import styles from "../ui/CarrierDashboardPage.module.scss";
@@ -107,13 +107,25 @@ export function EmployeesSection({
             onClick={() => onStartEdit(record)}
             title="Редактировать сотрудника"
           />
-          <Button
-            danger
-            size="small"
-            icon={<DeleteOutlined style={{ fontSize: 12 }} />}
-            onClick={() => onDelete(record.id)}
+          <Popconfirm
             title="Удалить сотрудника"
-          />
+            description="Вы уверены, что хотите удалить этого сотрудника?"
+            onConfirm={(e) => {
+              e?.stopPropagation();
+              onDelete(record.id);
+            }}
+            okText="Да"
+            cancelText="Нет"
+            placement="topRight"
+          >
+            <Button
+              danger
+              size="small"
+              icon={<DeleteOutlined style={{ fontSize: 12 }} />}
+              onClick={(e) => e.stopPropagation()}
+              title="Удалить сотрудника"
+            />
+          </Popconfirm>
         </Flex>
       )
     }

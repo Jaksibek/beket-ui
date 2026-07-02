@@ -401,8 +401,9 @@ export function SalesSection({
                       const tripBus = buses.find(b => b.id === activeSalesTrip.busId);
                       const schemeName = (activeSalesTrip.seatSchemeName || tripBus?.seatSchemeName || '').toLowerCase();
 
-                      if (schemeName.includes('sleeper') || schemeName.includes('спальн') || schemeName.includes('спальный')) {
-                        if (schemeName.includes('36')) {
+                      const isSleeperData = seatsData.some(s => s.level === 2 || s.Level === 2);
+                      if (isSleeperData || schemeName.includes('sleeper') || schemeName.includes('спальн') || schemeName.includes('спальный')) {
+                        if (schemeName.includes('36') || seatsData.length <= 38) {
                           return <AgentSchemeSleeperYutong36 seatsData={seatsData} selectedSeats={selectedSeats} onSeatClick={handleSeatClick} />;
                         }
                         return <AgentSchemeSleeperYutong40 seatsData={seatsData} selectedSeats={selectedSeats} onSeatClick={handleSeatClick} />;

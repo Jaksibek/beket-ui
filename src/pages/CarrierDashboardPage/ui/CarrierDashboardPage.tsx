@@ -343,7 +343,6 @@ function CarrierDashboardPage() {
   };
 
   const handleDeleteEmployee = async (id: string) => {
-    if (!window.confirm("Вы уверены, что хотите удалить этого агента?")) return;
     try {
       await authApi.delete(`/api/v1/carrier/employees/${id}`);
       message.success("Агент успешно удален!");

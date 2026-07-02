@@ -11,12 +11,18 @@ import { useResponsive } from "@/shared/lib/hooks/useResponsive";
 const { Header } = Layout;
 
 function HeaderNav() {
-  const { pathname } = useLocation();
+  const location = useLocation();
   const { sm } = useResponsive();
 
   let currentStep = undefined;
-  if (pathname === appRoutes.booking) {
-    currentStep = 2;
+  if (location.pathname === appRoutes.booking) {
+    const searchParams = new URLSearchParams(location.search);
+    const urlStep = searchParams.get("step");
+    if (urlStep === "payment" || urlStep === "success") {
+      currentStep = 3; // "Payment" phase (Index 3)
+    } else {
+      currentStep = 2; // "Booking" phase (Index 2)
+    }
   }
 
   return (
@@ -29,7 +35,7 @@ function HeaderNav() {
           </Flex>
 
           {/* CENTER: StepsTicket - taking remaining space but allowing scroll/shrink if needed */}
-          {pathname !== appRoutes.home && sm && (
+          {location.pathname !== appRoutes.home && sm && (
             <Flex flex="1 1 auto" justify="center" style={{ minWidth: 0, paddingInline: '20px' }}>
               <StepsTicket inHeader currentStep={currentStep} />
             </Flex>

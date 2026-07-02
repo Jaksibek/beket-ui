@@ -123,9 +123,10 @@ export const SeatSelectionModal = memo((props: SeatSelectionModalProps) => {
             );
         }
 
+        const isSleeperData = seatsData.some(s => s.level === 2 || (s as any).Level === 2);
         const schemeName = (trip?.bus?.seatSchemeName || '').toLowerCase();
-        if (schemeName.includes('sleeper') || schemeName.includes('спальн') || schemeName.includes('спальный')) {
-            if (schemeName.includes('36')) {
+        if (isSleeperData || schemeName.includes('sleeper') || schemeName.includes('спальн') || schemeName.includes('спальный')) {
+            if (schemeName.includes('36') || seatsData.length <= 38) {
                 return <BusSchemeSleeperYutong36 seatsData={seatsData} selectedSeats={selectedSeats} onSeatClick={handleSeatClick} />;
             }
             return <BusSchemeSleeperYutong40 seatsData={seatsData} selectedSeats={selectedSeats} onSeatClick={handleSeatClick} />;

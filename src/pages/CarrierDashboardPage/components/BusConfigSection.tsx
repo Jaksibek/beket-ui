@@ -221,10 +221,20 @@ export function BusConfigSection() {
   const renderGraphicalBus = (gridSeats: any[], rowCount: number, colCount: number, seatTypeStr?: string) => {
     const isVip = seatTypeStr?.toUpperCase() === "VIP" || seatTypeStr === "2";
     const isSleeper = gridSeats.some(s => s.level === 2 || s.Level === 2);
+    const is36Sleeper = isSleeper && (previewScheme?.name || "").toLowerCase().includes("36");
 
     const normalizeSleeperSeats = (seats: any[]) => {
       if (!isSleeper) return seats;
-      let mapped = seats.map(s => {
+
+      // Filter out seats 17 and 18 for Yutong 36 layout
+      const filtered = is36Sleeper
+        ? seats.filter(s => {
+            const num = Number(s.seatNumber || s.Number || s.seatNo || s.number || 0);
+            return num !== 17 && num !== 18;
+          })
+        : seats;
+
+      let mapped = filtered.map(s => {
         let row = s.row ?? s.Row ?? 0;
         let col = s.column ?? s.Column ?? 0;
         let numStr = String(s.seatNumber || s.Number || s.seatNo || s.SeatNo || s.number || "");
@@ -261,10 +271,17 @@ export function BusConfigSection() {
         const isBack = s.isLastSeat || s.IsLastSeat;
         if (isBack) {
           const num = Number(numStr || 0);
-          if (num === 15) col = 0;
-          else if (num === 16) col = 1;
-          else if (num === 17) col = 3;
-          else if (num === 18) col = 4;
+          if (is36Sleeper) {
+            if (num === 13) col = 0;
+            else if (num === 14) col = 1;
+            else if (num === 15) col = 3;
+            else if (num === 16) col = 4;
+          } else {
+            if (num === 15) col = 0;
+            else if (num === 16) col = 1;
+            else if (num === 17) col = 3;
+            else if (num === 18) col = 4;
+          }
         }
 
         let code = s.cellTypeCode || s.CellTypeCode;

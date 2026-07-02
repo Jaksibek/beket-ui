@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { Typography, Row, Col, Form, Button, Flex, message } from "antd";
 import { useTranslation } from "react-i18next";
 import { appRoutes } from "@/shared/config/router";
@@ -12,13 +12,14 @@ import { PaymentStep } from "./PaymentStep/PaymentStep";
 import { TicketStep } from "./TicketStep/TicketStep";
 import styles from "./BookingPage.module.scss";
 import API from "@/shared/api";
-
+ 
 const { Title } = Typography;
-
+ 
 function BookingPage() {
     const { t } = useTranslation();
     const location = useLocation();
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const [form] = Form.useForm<IBookingFormValues>();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [step, setStep] = useState<BookingStep>("form");
@@ -59,6 +60,7 @@ function BookingPage() {
                 } else {
                     setSession(parsed);
                     setStep(parsed.step);
+                    setSearchParams({ step: parsed.step });
                 }
                 return;
             } catch (e) {
@@ -160,6 +162,7 @@ function BookingPage() {
             localStorage.setItem("busgo_booking_session", JSON.stringify(newSession));
             setSession(newSession);
             setStep("payment");
+            setSearchParams({ step: "payment" });
             message.success(t("Данные пассажиров успешно подтверждены!") || "Данные пассажиров успешно подтверждены!");
         } catch (error: any) {
             console.error("Booking confirmation error:", error);
@@ -182,6 +185,7 @@ function BookingPage() {
         localStorage.setItem("busgo_booking_session", JSON.stringify(updatedSession));
         setSession(updatedSession);
         setStep("success");
+        setSearchParams({ step: "success" });
     };
 
     const handleExpire = () => {
